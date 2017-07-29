@@ -1217,7 +1217,7 @@ plot(sample.data$Days.To.Resolve)
 Sys.Date()
 date()
 
-
+## GGPLOT GUIDE
 #bar chart average
 ggplot(sample.data, aes(x=Store, y=Days.To.Resolve)) + stat_summary(fun.y="mean", geom="bar")
 
