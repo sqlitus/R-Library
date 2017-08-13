@@ -149,43 +149,45 @@ function(REFERENCES){
   # https://stackoverflow.com/questions/30994194/quotes-and-hyphens-not-removed-by-tm-package-functions-while-cleaning-corpus
 }
 
-# get title column, convert to data frame, change title
+# convert title column to character, isolate title column in data frame, convert to data frame, change title, remove all punctuation
 df$Title <- as.character(df$Title)
 df.titles <- as.data.frame(df[,c("Title")], col.names = "Title")
 colnames(df.titles) <- "Title"
+df.titles$Title <- gsub("[^a-zA-Z0-9 ]"," ",df.titles$Title)
 
 # turn sliced dataframe to corpus, then get document term matrix
 corpus <- Corpus(DataframeSource(df.titles))
 dtm <- DocumentTermMatrix(corpus,
                           control = list(removePunctuation = TRUE,
                                          stopwords = TRUE))
-inspect(dtm)
 
 # more text processing after this probably
 # calculate flag column
 library(tidytext)
 dtm.df <- tidy(dtm)
 dtm.df$flag <- ifelse(dtm.df$count > 0, 1, 0)
+sql <- sqldf("select term, count(*) as num_occurrences from [dtm.df] group by term order by count(*) desc")
+sql
 
+
+
+# !!! convert dtm to matrix, create flags, and append to orig data frame
+word.m <- as.matrix(dtm)
+word.m <- as.data.frame(word.m)
+word.m[word.m > 1] <- 1
+df.w.words <- cbind(df,word.m)
+
+# write output - test size
+write.csv(df.w.words, file = "D:\\Work\\Libraries\\R Library\\Data\\sample data with words.csv")
+
+
+# next steps - get # of columns we want from matrix (top x occurring words)
 
 # need analysis on most frequent words (by doc occurrence)
 # need to see which docs match a particular word
 # need to be able to slice and dice based on word, and other fields from base dataset.
-
-
-
 # need to APPEND dtm to orig df for analysis
 
-
-
-function(trying.to.remove.more.characters.not.working){
-# removeSpecialChars <- function(x) gsub("“•”","",x)
-removeSpecialChars <- function(x) gsub("[^a-zA-Z0-9 ]","",x)
-corpus2 <- tm_map(corpus, removeSpecialChars)
-dtm2 <- DocumentTermMatrix(corpus2,
-                           control = list(removePunctuation = TRUE,
-                                          stopwords = TRUE))
-}
 
 
 
