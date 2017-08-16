@@ -141,7 +141,7 @@ df$Created.Month <-as.Date(cut(df$Created, breaks = "month"))
 
 
 
-#### 8/12/2017 Text mining sample data ####
+#### 8/12/2017 Text mining sample data - append document term matrix to original data frame ####
 
 function(REFERENCES){
   # https://stackoverflow.com/questions/44014097/convert-document-term-matrix-dtm-to-data-frame-r-programming
@@ -161,15 +161,6 @@ dtm <- DocumentTermMatrix(corpus,
                           control = list(removePunctuation = TRUE,
                                          stopwords = TRUE))
 
-# more text processing after this probably
-# calculate flag column
-library(tidytext)
-dtm.df <- tidy(dtm)
-dtm.df$flag <- ifelse(dtm.df$count > 0, 1, 0)
-sql <- sqldf("select term, count(*) as num_occurrences from [dtm.df] group by term order by count(*) desc")
-sql
-
-
 
 # !!! convert dtm to matrix, create flags, and append to orig data frame
 word.m <- as.matrix(dtm)
@@ -177,9 +168,36 @@ word.m <- as.data.frame(word.m)
 word.m[word.m > 1] <- 1
 df.w.words <- cbind(df,word.m)
 
-# write output - test size
+# write output - to test size
 write.csv(df.w.words, file = "D:\\Work\\Libraries\\R Library\\Data\\sample data with words.csv")
 
+
+
+
+
+
+
+################# Document Term Matrix - Long Dataframe for EDA ################# 
+
+ticketsandtitles <- df[,c("ID","Title")]
+ticketsandtitles$Title <- gsub("[^a-zA-Z0-9 ]"," ",ticketsandtitles$Title)
+
+# long dataframe with ids, words, counts, and flags for more text-specific analysis
+corpus2 <- VCorpus(DataframeSource(ticketsandtitles), readerControl = list(reader = readTabular(mapping = list(content = "Title", id = "ID"))))
+dtm2 <- DocumentTermMatrix(corpus2,
+                          control = list(removePunctuation = TRUE,
+                                         stopwords = TRUE))
+dtm.df <- tidy(dtm2)
+dtm.df$flag <- ifelse(dtm.df$count > 0, 1, 0)
+
+write.csv(dtm.df, file = "D:\\Work\\Libraries\\R Library\\Data\\tickets and word frequencies.csv")
+
+# inspect corpus elements
+corpus2[[1]]$content
+corpus2[[1]]$meta
+meta(corpus2[[1]])
+
+############################################################
 
 # next steps - get # of columns we want from matrix (top x occurring words)
 
@@ -187,8 +205,6 @@ write.csv(df.w.words, file = "D:\\Work\\Libraries\\R Library\\Data\\sample data 
 # need to see which docs match a particular word
 # need to be able to slice and dice based on word, and other fields from base dataset.
 # need to APPEND dtm to orig df for analysis
-
-
 
 
 

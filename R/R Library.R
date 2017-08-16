@@ -1329,3 +1329,12 @@ ggplot(sample.data, aes(Num.Assigns, Days.To.Resolve, color=Priority, shape=Stor
 ### End ###
 
 # end ====
+
+
+#### Additional General Notes ####
+
+# create data frame with column names
+# create data frame sample
+docs <- data.frame(someText = c("This is a text.", "This another one."), secondColumn = c(1:2))
+(ds <- DataframeSource(docs))
+inspect(VCorpus(ds))
