@@ -91,7 +91,7 @@ ipak <- function(pkg){
   sapply(pkg, require, character.only = TRUE)
 }
 
-ipak(c("ggplot2", "tm", "sqldf", "scales","chron", "tidytext"))
+ipak(c("ggplot2", "tm", "sqldf", "scales","chron", "tidytext", "tidyr"))
 
 
 
@@ -179,20 +179,39 @@ write.csv(df.w.words, file = "D:\\Work\\Libraries\\R Library\\Data\\sample data 
 
 ################# Document Term Matrix - Long Dataframe for EDA ################# 
 
-ticketsandtitles <- df[,c("ID","Title")]
+ticketsandtitles <- df[,c("ID","Title","Location")]
 ticketsandtitles$Title <- gsub("[^a-zA-Z0-9 ]"," ",ticketsandtitles$Title)
 
 # long dataframe with ids, words, counts, and flags for more text-specific analysis
-corpus2 <- VCorpus(DataframeSource(ticketsandtitles), readerControl = list(reader = readTabular(mapping = list(content = "Title", id = "ID"))))
+corpus2 <- VCorpus(DataframeSource(ticketsandtitles), readerControl = list(reader = readTabular(mapping = list(content = "Title", id = "ID", Location = "Location"))))
 dtm2 <- DocumentTermMatrix(corpus2,
                           control = list(removePunctuation = TRUE,
                                          stopwords = TRUE))
 dtm.df <- tidy(dtm2)
 dtm.df$flag <- ifelse(dtm.df$count > 0, 1, 0)
 
-write.csv(dtm.df, file = "D:\\Work\\Libraries\\R Library\\Data\\tickets and word frequencies.csv")
+# additional summary tables
+dtm.df.withloc <- sqldf("select [dtm.df].*,ticketsandtitles.Location 
+                        from [dtm.df] join ticketsandtitles on [dtm.df].document = ticketsandtitles.ID")
+
+
+location.sum <- sqldf("select Location, term, count(*) as 'total'
+                      , sum(count) as 'word.mentions', sum(flag) as 'count2'
+                      , count(distinct document) as 'totalTickets', count(*) over(partition by Location) as 'loctictotal' 
+                      from [dtm.df.withloc] group by Location, term")
+
+# location word matrix, with ticket sum column
+location.sum.matrix <- spread(location.sum, term, total)
+location.sum.matrix$location.total <- rowSums(location.sum.matrix)
+location.ticket.sum <- sqldf("select Location, count(distinct document) as [numtickets] from [dtm.df.withloc] group by Location", drv = "SQLite")
+location.sum.matrix <- sqldf("select a.*, b.numtickets from [location.sum.matrix] a join [location.ticket.sum] b on a.Location = b.Location")
+
+
+write.csv(dtm.df.withloc, file = "D:\\Work\\Libraries\\R Library\\Data\\tickets and word frequencies.csv")
+write.csv(location.sum.matrix, file = "D:\\Work\\Libraries\\R Library\\Data\\Locations and Counts.csv", row.names = FALSE)
 
 # inspect corpus elements
+corpus2[[1]]
 corpus2[[1]]$content
 corpus2[[1]]$meta
 meta(corpus2[[1]])
