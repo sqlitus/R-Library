@@ -207,8 +207,26 @@ location.ticket.sum <- sqldf("select Location, count(distinct document) as [numt
 location.sum.matrix <- sqldf("select a.*, b.numtickets from [location.sum.matrix] a join [location.ticket.sum] b on a.Location = b.Location")
 
 
-write.csv(dtm.df.withloc, file = "D:\\Work\\Libraries\\R Library\\Data\\tickets and word frequencies.csv")
+write.csv(dtm.df.withloc, file = "D:\\Work\\Libraries\\R Library\\Data\\tickets and word frequencies.csv", row.names = FALSE)
 write.csv(location.sum.matrix, file = "D:\\Work\\Libraries\\R Library\\Data\\Locations and Counts.csv", row.names = FALSE)
+
+
+
+
+# !!! long dataframe with all other datapoints
+
+# subset dataframe selecting only columns that are factors or dates. subset dataframe by column type
+z.df.prep <- df[,sapply(df,is.factor) | sapply(df,function(x){inherits(x, 'Date')})]
+
+# subset dataframe by columns not in given list
+df[,-which(names(df) %in% c("Title", "Created.Week"))]
+
+
+dtm.full <- sqldf("select [dtm.df].*, [z.df.prep].*
+                  from [dtm.df] join [z.df.prep] on [dtm.df].document = [z.df.prep].ID")
+
+write.csv(dtm.full, file = "D:\\Work\\Libraries\\R Library\\Data\\dtm full.csv", row.names = FALSE)
+
 
 # inspect corpus elements
 corpus2[[1]]
