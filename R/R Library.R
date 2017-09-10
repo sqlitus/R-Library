@@ -14,6 +14,607 @@ help.search(pattern = "optimisation|optimization", fields = c("title","concept")
 
 
 
+
+
+
+#### 9/10/2017 - Dplyr deeper exercises; window functions & more ####
+
+# (refer to cheat sheets for dplyr / data wrangling)
+
+# import data & transformations (from library) - sample ticket data
+df <- read.csv("D:\\Work\\Libraries\\R Library\\Data\\Sample Ticket Data.csv")
+df$Created <- as.character(df$Created)
+df$Created <- as.POSIXct(df$Created, format="%m/%d/%Y %H:%M")
+df$Priority <- paste("P",df$Priority, sep = "")
+df$Priority <- as.factor(df$Priority)
+df$Created.Week <- as.Date(cut(df$Created, breaks = "week", start.on.monday = T))
+
+# mutate, arrange, group_by - window functions example. row_number, count, n_distinct, if_else. Avg # per group
+df.2 <- df %>%
+  select(ID, Created, Created.Week, Store) %>%
+  mutate(ticketTotal = n()) %>%
+  mutate(origRowNum = row_number()) %>%
+  mutate(numStores = n_distinct(Store)) %>%
+  mutate(numWeeks = n_distinct(Created.Week)) %>%
+  mutate(conditional = if_else(Created.Week < "2016-06-01", "Phase 1", "Phase 2")) %>%
+  mutate(avgTicketsPerWeek = ticketTotal / numWeeks) %>%
+  mutate(avgTicketsPerStore = ticketTotal / numStores) %>%
+  mutate(middleOfPeriod = median(Created.Week)) %>% # median gets middle of rows's value, NOT the middle value of that column. aggregate it first
+  group_by(Created.Week) %>% # total by week
+  mutate(weekTotal = n())  %>%
+  arrange(Created.Week) %>%
+  mutate(weekNum = row_number()) %>%
+  group_by(Store) %>% # total by store
+  mutate(storeTotal = n()) %>%
+  group_by(Created.Week, Store) %>% # totals by week and store grouping
+  mutate(weekStoreTotal = n()) %>%
+  arrange(desc(weekStoreTotal)) %>%
+  mutate(weekStoreTotalRank = row_number()) %>%
+  ungroup() %>%
+  arrange(origRowNum)
+
+
+# summary, RENAME
+df.2.summary <- df.2 %>%
+  group_by(Store) %>%
+  summarise(storeCount = n()) %>%
+  rename(COUNT = storeCount)
+
+# summary & mutate - summary & vector functions. week total -> avg tickets per week
+df.2.summary.weeks <- df.2 %>%
+  group_by(Created.Week) %>%
+  summarise(weekTotal = n()) %>% # summarise gets rid of other columns
+  ungroup() %>%
+  mutate(weekAvg = mean(weekTotal)) %>%
+  mutate(weekSd = sd(weekTotal)) %>%
+  mutate(weekVar = var(weekTotal)) %>%
+  mutate(weekMax = max(weekTotal)) %>%
+  mutate(weekMin = min(weekTotal)) %>%
+  mutate(weekIQR = IQR(weekTotal)) %>%
+  mutate(weekFirst = first(Created.Week)) %>%
+  mutate(cumMean = cummean(weekTotal)) %>%
+  mutate(cumSum = cumsum(weekTotal)) %>%
+  mutate(middleWeek = median(Created.Week)) %>% # median is true middle if odd n(), averaged middle if even n()
+  mutate(firstWeek = first(Created.Week)) %>%
+  mutate(lastWeek = last(Created.Week)) %>%
+  mutate(dayRange = lastWeek - firstWeek) %>%
+  mutate(topDayRange = lastWeek - middleWeek) %>%
+  mutate(botDayRange = middleWeek - firstWeek) %>%
+  slice(-48) %>%
+  mutate(newMiddleWeek = median(Created.Week)) # median is true middle if odd n(), averaged middle if even n()
+## take off last col then find median again
+
+
+# extract - top/bot store count per week
+df.2.top2.store.per.week <- df.2 %>%
+  arrange(Created.Week, desc(weekStoreTotal)) %>%
+  filter(weekStoreTotalRank <= 2)
+df.2.bot2.store.per.week <- df.2 %>%
+  arrange(Created.Week, desc(weekStoreTotalRank)) %>%
+  filter(weekStoreTotalRank > 2)
+
+# extract - data for first x weeks of data, "top x", dense rank .... [order by date], dense_rank created.week, filter first 2 created.week
+df.2.top2.weeks <- df.2 %>%
+  arrange(Created) %>%
+  mutate(weekOrder = dense_rank(Created.Week)) %>%
+  filter(weekOrder <= 2)
+
+# extract - distinct values of ... something
+df.2.distinct.store <- df.2 %>%
+  distinct(Store)
+
+# extract - random sample of rows, by # or %, with/without replacement
+df.2.rand.num.samp <- df.2 %>%
+  sample_n(5) %>%
+  arrange(origRowNum)
+df.2.rand.pct.samp <- df.2 %>%
+  sample_frac(.1) %>%
+  arrange(origRowNum)
+
+# extract - slice which # rows I want
+df.2.slice <- df.2 %>%
+  slice(5:10)
+df.2.slice <- df.2 %>%
+  slice(c(5,10,15))    
+
+# extract - top n
+df.2.order.rownum <- df.2 %>%
+  top_n(2, origRowNum)
+df.2.order.Weeks <- df.2 %>% # top_n on repeated row value is not working
+  group_by(Created.Week) %>%
+  arrange(Created.Week) %>%
+  top_n(1, Created.Week)
+
+# group by aggregation; summary functions
+df.2.count <- df.2 %>% 
+  group_by(Store) %>% 
+  summarise(count = n())
+
+# select columns based on literal string OR regular expression
+df.2.sel.cols <- df.2 %>%
+  select(contains("store"))
+df.2.sel.cols2 <- df.2 %>%
+  select(contains("."))
+df.2.sel.cols3 <- df.2 %>%
+  select(matches("."))
+df.2.sel.cols4 <- df.2 %>%
+  select(matches("[tasdf]o"))
+
+#### 9/9/2017 - Dplyr first look & sqldf workaround ####
+
+
+# find term sums / number of time period for average per period
+# find term sum in period / total term sums for term % during period.
+df.weekly.store.total <- sqldf("select df.[Created.week], store, count(*) as weekStoreTotal, avg(*) as weekStoreAvg 
+                               from df group by [created.week], store")
+
+df.weekly.total <- sqldf("select df.[created.week], count(*) as weekTotal from df group by [created.week]")
+
+df.store.total <- sqldf("select df.store, count(*) as overallStoreTotal, df2.totalCount,
+                        round(cast(count(*) as float) / cast(df2.totalCount as foat), 2) as baseStorePercent 
+                        from df join (select count(*) as totalCount from df) df2 group by store")
+
+df.calcs <- sqldf("select df.*, df2.weekStoreTotal, df3.weekTotal, 
+                  round(cast(df2.weekStoreTotal as float) / cast(df3.weekTotal as float), 2) as 'weeklyStorePercent'
+                  , df4.overallStoreTotal, df4.totalCount, df4.baseStorePercent
+                  from df join [df.weekly.store.total] df2 on df.[created.week] = df2.[created.week] and df.[store] = df2.store
+                  join [df.weekly.total] df3 on df.[created.week] = df3.[created.week]
+                  join [df.store.total] df4 on df.store = df4.store")
+
+# confirm
+df.test <- sqldf("select * from [df.calcs] order by created")
+# compare weekly store % to base store %, see what is a certain pct above normal.....
+# sort & plot those  
+
+
+
+# test mutate & filter
+df.t2 <- df.test %>%
+  mutate(newcol = round(overallStoreTotal / totalCount, digits = 3)) %>%
+  # filter(weeklyStorePercent > newcol * 1.7 & Store == "Lamar") %>%
+  mutate(prev = lag(Location, 1, order_by = Created.Date)) %>%
+  mutate(nextcol = lead(Location, 1, order_by = Created.Date))
+
+# group by
+df.t2 <- df.test %>%
+  count(Store)
+df.t2 <- df.test %>%
+  group_by(Store)
+df.t2 <- df.test %>%
+  filter()
+
+# window aggregate
+df.t2 <- df.test %>%
+  filter(weeklyStorePercent > mean(weeklyStorePercent))
+
+
+## Dplyr w/ window function aggregates. NOTE: USE RANK-BASED AGGREGATES BEFORE GROUPING
+df.t2 <- df.test %>%
+  select(ID, Store, Created.Week, Created.Date, Location) %>%
+  group_by(Store) %>%
+  mutate(storeTotal = n()) %>%
+  group_by(Created.Week, Store) %>%
+  mutate(storeWeekTotal = n()) %>%
+  mutate(prev = lag(Location, 1, order_by = Created.Date)) %>%
+  mutate(nextcol = lead(Location, 1, order_by = Created.Date))
+
+df.t4 <- df.test %>%
+  select(ID, Store, Created.Week, Created.Date, Location) %>%
+  group_by(Store) %>%
+  mutate(prev = lag(Location, 1, order_by = Created.Date)) %>%
+  mutate(nextcol = lead(Location, 1, order_by = Created.Date))
+
+df.t5 <- df.test %>%
+  select(ID, Store, Created.Week, Created.Date, Location) %>%
+  mutate(prev = lag(Location, 1, order_by = Created.Date)) %>%
+  mutate(nextcol = lead(Location, 1, order_by = Created.Date))
+group_by(Store) %>%
+  
+  
+  df.t3 <- df.test %>%
+  select(ID, Store, Created.Week, Created.Date, Location) %>%
+  mutate(prev = lag(Location, 1, order_by = Created.Date)) %>%
+  mutate(nextcol = lead(Location, 1, order_by = Created.Date))
+
+# group by - does not change the data - groups in memory for aggregations
+df.t2 <- df.test %>%
+  select(ID, Store, Created.Week) %>%
+  group_by(Store) %>%
+  group_by(Created.Week) %>%
+  ungroup()
+df.t3 <- df.test %>%
+  select(ID, Store, Created.Week) 
+identical(df.t3, df.t2)
+
+
+#### 8/12/2017 Text mining vignette ####
+
+data("crude")
+tdm <- TermDocumentMatrix(crude,
+                          control = list(removePunctuation = TRUE,
+                                         stopwords = TRUE))
+
+
+dtm <- DocumentTermMatrix(crude,
+                          control = list(weighting =
+                                           function(x)
+                                             weightTfIdf(x, normalize =
+                                                           FALSE),
+                                         stopwords = TRUE))
+
+dtm2 <- t(tdm)
+
+inspect(tdm[202:205, 1:5])
+inspect(tdm[c("price", "texas"), c("127", "144", "191", "194")])
+inspect(dtm[1:5, 273:276])
+
+
+# convert the wfm to a dataframe
+install.packages("tidytext")
+library(tidytext)
+d <- tidy(dtm2)
+
+
+
+
+
+
+
+
+
+#### 7/22/2017 - POLAR COORDINATES ####
+t <- seq(0,10, len=100)  # the parametric index
+# Then convert ( sqrt(t), 2*pi*t ) to rectilinear coordinates
+x = sqrt(t)* cos(2*pi*t) 
+y = sqrt(t)* sin(2*pi*t)
+
+
+plot(sample(50))
+
+help(plot)
+plot(df,y)
+
+
+plot(df,y, type="b")
+plot(df,y, type = "c")
+
+polar2cart<-function(df,y,dist,bearing,as.deg=FALSE){
+  ## Translate Polar coordinates into Cartesian coordinates
+  ## based on starting location, distance, and bearing
+  ## as.deg indicates if the bearing is in degrees (T) or radians (F)
+  
+  if(as.deg){
+    ##if bearing is in degrees, convert to radians
+    bearing=bearing*pi/180
+  }
+  
+  newx<-x+dist*sin(bearing)  ##X
+  newy<-y+dist*cos(bearing)  ##Y
+  return(list("x"=newx,"y"=newy))
+}
+
+
+##Example
+
+oldloc=c(0,5) 
+bearing=200 #degrees
+dist=5
+
+newloc<-polar2cart(oldloc[1],oldloc[2],dist,bearing,TRUE)
+plot(oldloc[1],oldloc[2],xlim=c(-10,10),ylim=c(-10,10))
+points(newloc$x,newloc$y,col="red")
+
+
+
+
+
+
+
+#### 7/21/2017 - !! Sample Ticket Data - INITIAL TEXT MINING RESEARCH !!####
+
+# import packages
+ipak <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) 
+    install.packages(new.pkg, dependencies = TRUE)
+  sapply(pkg, require, character.only = TRUE)
+}
+
+ipak(c("ggplot2", "tm", "sqldf", "scales","chron", "tidytext", "tidyr"))
+
+
+
+## Import & Clean data process. Convert char to datetimes. Convert text factors to char. Create calculated columns with datetime arithmatic.
+
+df <- read.csv("D:\\Work\\Libraries\\R Library\\Data\\Sample Ticket Data.csv")
+
+# altering strings and converting to factors
+df$Priority <- paste("P",df$Priority, sep = "")
+df$Priority <- as.factor(df$Priority)
+# df$Priority <- gsub(" ", "", df$Priority)
+
+# convert the string dates to datetimes -> convert to character, then match the format of the character field to time values
+df$Created <- as.character(df$Created)
+df$Created <- as.POSIXct(df$Created, format="%m/%d/%Y %H:%M")
+df$Resolved <- as.character(df$Resolved)
+df$Resolved <- as.POSIXct(df$Resolved, format="%m/%d/%Y %H:%M")
+df$FirstAssigned <- as.character(df$FirstAssigned)
+df$FirstAssigned <- as.POSIXct(df$FirstAssigned, format="%m/%d/%Y %H:%M")
+
+# skip
+function(date.conversion.and.datediffs){
+  # Convert to simple date and find datediff
+  df$Created.Date <- as.Date(df$Created,format = "%m/%d/%Y")
+  df$Resolved.Date <- as.Date(df$Resolved,format = "%m/%d/%Y")
+  df$Time.To.Response <- df$FirstAssigned - df$Created
+  df$Days.To.Resolve <- df$Resolved - df$Created
+}
+
+# Time Difference in units = minutes
+df$Time.To.Response <- difftime(df$FirstAssigned, df$Created, units = "hours")
+df$Time.To.Restore.Service <- difftime(df$Resolved, df$Created, units = "hours")
+df$Assigned.To.Resolve <- difftime(df$Resolved, df$FirstAssigned, units = "hours")
+
+
+# week and month values of dates - for POSIX dates
+df$Created.Week <- as.Date(cut(df$Created,
+                               breaks = "week",
+                               start.on.monday = T)) # changes weekly break point to Monday
+df$Created.Week2 <- as.Date(cut(df$Created,
+                                breaks = "week",
+                                start.on.monday = F)) # changes weekly break point to Sunday
+
+
+df$Created.Month <-as.Date(cut(df$Created, breaks = "month"))
+
+
+
+
+## 8/12/2017 Text mining sample data - append document term matrix to original data frame ##
+
+function(REFERENCES){
+  # https://stackoverflow.com/questions/44014097/convert-document-term-matrix-dtm-to-data-frame-r-programming
+  # https://stackoverflow.com/questions/26711423/how-can-i-convert-an-r-data-frame-with-a-single-column-into-a-corpus-for-tm-such
+  # https://stackoverflow.com/questions/30994194/quotes-and-hyphens-not-removed-by-tm-package-functions-while-cleaning-corpus
+}
+
+# convert title column to character, isolate title column in data frame, convert to data frame, change title, remove all punctuation
+df$Title <- as.character(df$Title)
+df.titles <- as.data.frame(df[,c("Title")], col.names = "Title")
+colnames(df.titles) <- "Title"
+df.titles$Title <- gsub("[^a-zA-Z0-9 ]"," ",df.titles$Title)
+
+# turn sliced dataframe to corpus, then get document term matrix
+corpus <- Corpus(DataframeSource(df.titles))
+dtm <- DocumentTermMatrix(corpus,
+                          control = list(removePunctuation = TRUE,
+                                         stopwords = TRUE))
+
+
+# !!! convert dtm to matrix, create flags, and append to orig data frame
+word.m <- as.matrix(dtm)
+word.m <- as.data.frame(word.m)
+word.m[word.m > 1] <- 1
+df.w.words <- cbind(df,word.m)
+
+# write output - to test size
+write.csv(df.w.words, file = "D:\\Work\\Libraries\\R Library\\Data\\sample data with words.csv")
+
+
+
+
+
+
+
+## Document Term Matrix - Long Dataframe for EDA ##
+
+ticketsandtitles <- df[,c("ID","Title","Location")]
+ticketsandtitles$Title <- gsub("[^a-zA-Z0-9 ]"," ",ticketsandtitles$Title)
+
+# long dataframe with ids, words, counts, and flags for more text-specific analysis
+corpus2 <- VCorpus(DataframeSource(ticketsandtitles), readerControl = list(reader = readTabular(mapping = list(content = "Title", id = "ID", Location = "Location"))))
+dtm2 <- DocumentTermMatrix(corpus2,
+                           control = list(removePunctuation = TRUE,
+                                          stopwords = TRUE))
+dtm.df <- tidy(dtm2)
+dtm.df$flag <- ifelse(dtm.df$count > 0, 1, 0)
+
+# additional summary tables
+dtm.df.withloc <- sqldf("select [dtm.df].*,ticketsandtitles.Location 
+                        from [dtm.df] join ticketsandtitles on [dtm.df].document = ticketsandtitles.ID")
+
+
+location.sum <- sqldf("select Location, term, count(*) as 'total'
+                      , sum(count) as 'word.mentions', sum(flag) as 'count2'
+                      , count(distinct document) as 'totalTickets', count(*) over(partition by Location) as 'loctictotal' 
+                      from [dtm.df.withloc] group by Location, term")
+
+# location word matrix, with ticket sum column
+location.sum.matrix <- spread(location.sum, term, total)
+location.sum.matrix$location.total <- rowSums(location.sum.matrix)
+location.ticket.sum <- sqldf("select Location, count(distinct document) as [numtickets] from [dtm.df.withloc] group by Location", drv = "SQLite")
+location.sum.matrix <- sqldf("select a.*, b.numtickets from [location.sum.matrix] a join [location.ticket.sum] b on a.Location = b.Location")
+
+
+write.csv(dtm.df.withloc, file = "D:\\Work\\Libraries\\R Library\\Data\\tickets and word frequencies.csv", row.names = FALSE)
+write.csv(location.sum.matrix, file = "D:\\Work\\Libraries\\R Library\\Data\\Locations and Counts.csv", row.names = FALSE)
+
+
+
+
+# !!! long dataframe with all other datapoints
+
+# subset dataframe selecting only columns that are factors or dates. subset dataframe by column type
+z.df.prep <- df[,sapply(df,is.factor) | sapply(df,function(x){inherits(x, 'Date')})]
+
+# subset dataframe by columns not in given list
+df[,-which(names(df) %in% c("Title", "Created.Week"))]
+
+
+dtm.full <- sqldf("select [dtm.df].*, [z.df.prep].*
+                  from [dtm.df] join [z.df.prep] on [dtm.df].document = [z.df.prep].ID")
+
+write.csv(dtm.full, file = "D:\\Work\\Libraries\\R Library\\Data\\dtm full.csv", row.names = FALSE)
+
+
+# inspect corpus elements
+corpus2[[1]]
+corpus2[[1]]$content
+corpus2[[1]]$meta
+meta(corpus2[[1]])
+
+
+# next steps - get # of columns we want from matrix (top x occurring words)
+
+# need analysis on most frequent words (by doc occurrence)
+# need to see which docs match a particular word
+# need to be able to slice and dice based on word, and other fields from base dataset.
+# need to APPEND dtm to orig df for analysis
+
+
+
+#### ggplot2 experimenting ####
+# mailR stuff / Rshiny
+
+#do: stacked bar chart, facet bar, color scale by X, point by Y...
+# volume
+ggplot(df, aes(Created.Month))+geom_bar()
+
+ggplot(df, aes(x=Created.Month, y=Time.To.Response))+stat_summary(fun.y = "mean", geom="bar")+
+  facet_grid(facets=Support.Group~.) # rows ~ columns
+
+
+ggplot(data=df, aes(x=Created.Month)) + geom_bar(aes(fill=..count..))+
+  facet_grid(Classification~.)
+
+
+
+
+
+########### GGPLOT SPELLBOOK ###########
+
+########### Part 1 - Basic Bar Plots; Colors; ####
+#### requires Sample Ticket Data - cleaned
+
+# Count
+ggplot(df, aes(Created.Month))+
+  geom_bar()
+
+# Sum
+ggplot(df, aes(Created.Month, Time.To.Restore.Service))+
+  stat_summary(fun.y = "sum", geom = "bar")
+ggplot(df, aes(Created.Month, Time.To.Restore.Service))+
+  geom_bar(stat = "identity", fill = "Purple")
+ggplot(df, aes(Created.Month, Time.To.Restore.Service))+
+  geom_bar(stat = "summary", fun.y = "sum", fill = "gold")
+
+# Avg
+ggplot(df, aes(Created.Month, Time.To.Restore.Service))+
+  stat_summary(fun.y = "mean", geom = "bar")
+ggplot(df, aes(Created.Month, Time.To.Restore.Service))+
+  geom_bar(stat = "summary", fun.y = "mean", fill = "blue")
+
+# Median
+ggplot(df, aes(Created.Month, Time.To.Restore.Service))+
+  stat_summary(fun.y = "median", geom = "bar")
+ggplot(df, aes(Created.Month, Time.To.Restore.Service))+
+  geom_bar(stat = "summary", fun.y = "median", fill = "green")
+
+
+## Custom colors
+
+# 1 - uniform color  -> border / fill
+ggplot(df, aes(Created.Month))+
+  geom_bar(color = "blue", fill = rgb(.1,.4,.5,.7))
+
+ggplot(df, aes(Created.Month, Time.To.Restore.Service))+
+  geom_bar(stat = "summary", fun.y = "mean", color = "blue", fill = rgb(.1,.4,.5,.3))+
+  scale_x_date(date_breaks = "2 month")
+
+# 2 - hue
+ggplot(df, aes(Created.Month, fill = Priority))+ # fill = as.factor(Created_Month_R)
+  geom_bar()+scale_fill_hue(c = 40)
+
+# 3 - Rcolorbrewer
+ggplot(df, aes(Created.Month, fill = Support.Group))+geom_bar()+
+  scale_fill_brewer(palette = "Set1")
+
+# 4 - greyscale
+ggplot(df, aes(Created.Month, fill = Priority))+geom_bar()+
+  scale_fill_grey(start = .25, end = .75)
+
+# 5 - manual
+ggplot(df, aes(Created.Month, fill = Priority))+geom_bar()+
+  scale_fill_manual(values = c("red","orange","blue","green","black"))
+
+
+
+###  Minor Tweaks
+
+# Facet
+ggplot(df, aes(x = Created.Month, y = Time.To.Restore.Service, color = Created.Month))+
+  stat_summary(fun.y = "mean", geom = "bar")+
+  facet_wrap(~Support.Group)
+
+
+# label intervals
+ggplot(df, aes(Created.Month, Time.To.Restore.Service))+
+  stat_summary(fun.y = "sum", geom = "bar")+
+  scale_x_date(date_breaks = "2 month")
+
+# Missing dates are filled in by default; alter width
+df.sample <- df[sample(nrow(df), 11),]
+ggplot(df.sample, aes(Created.Month))+geom_bar()
+ggplot(df.sample, aes(Created.Month))+
+  geom_bar(fill = "pink", width = 22, color = "black")
+
+
+# Extras 1 - remove legend, change labels, flip axis (horizontal bar plot), bar width
+ggplot(df, aes(Priority, fill = Priority))+geom_bar(width = 1)+
+  theme(legend.position = "none")+
+  labs(x = "my x axis", y = "my y axis", title = "my title", ggtitle = "ggtitle here?")+
+  coord_flip()
+
+
+
+########### Part 2 - Stacked / Grouped bars ####
+# Stacked Bar
+ggplot(df, aes(x = Created.Week, fill = as.factor(Priority)))+
+  geom_bar()
+
+# Stacked Percent
+ggplot(df, aes(x = Created.Week, fill = as.factor(Priority)))+
+  geom_bar(position = "fill")
+
+# Grouped Bar
+ggplot(df, aes(x = Created.Week, fill = Priority))+
+  geom_bar(position = "dodge")
+
+# Add RcolorBrewer
+ggplot(df, aes(x = Created.Week, fill = Priority))+
+  geom_bar(position = "fill") + scale_fill_brewer(palette = "Pastel1")
+
+# Faceting
+ggplot(df, aes(x = Created.Week, fill = Priority))+
+  geom_bar()+facet_wrap(~Support.Group)
+
+
+
+
+
+#### Master template
+ggplot(df, aes(Created.Month, Time.To.Restore.Service))+
+  geom_bar(stat = "summary", fun.y = "mean", fill = "blue")+
+  scale_x_date(date_breaks = "2 month", date_minor_breaks = "1 week", date_labels = "%Y-%b")+
+  facet_grid(Support.Group~.)+
+  xlab("Month")+
+  ylab("Avg Time Restore Service")+
+  ggtitle("MTRS by SG and month")+
+  theme_classic()
+
+
+# do next: grep, regexp, get factor month name from date!
+
 #### Nulls, NAs ####
 
 # 7/18/2017
@@ -570,6 +1171,28 @@ ggplot(data=iris.df, aes(x=Sepal.Length))+
 
 #### Data analysis 
 
+### Swirl - EDA - 12: K Means Clustering ###
+
+
+cmat
+points(cx, cy, col = c("red", "orange", "purple"), pch = 3, cex = 2, lwd = 2)
+mdist(x,y,cx,cy)
+which.min(distTmp, 2, which.min)
+which(distTmp, 2, which.min)
+history()
+sapply(distTmp, 2, which.min)
+sapply(distTmp, 2, which.min())
+info()
+apply(distTmp, 2, which.min)
+points(x,y, pch = 19, cex = 2, col = cols1[newClust])
+tapply(x, newClust, mean)
+tapply(y, newClust, mean)
+points(newCx, newCy, col = cols1, pch = 8, cex = 2, lwd = 2)
+mdist(x,y,newCx,newCy)
+apply(distTmp2,2,which.min)
+points(x,y,pch = 19, cex =2, col = cols1[newClust2])
+tapply(x,newClust2,mean)
+tapply(y,newClust2,mean)
 
 install_from_swirl("Exploratory Data Analysis")
 
