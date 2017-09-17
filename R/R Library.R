@@ -17,6 +17,25 @@ help.search(pattern = "optimisation|optimization", fields = c("title","concept")
 
 
 
+
+#### 9/10/2017 - POSIX dates & timezone conversions ####
+
+# import data & transformations (from library) - sample ticket data
+df <- read.csv("D:\\Work\\Libraries\\R Library\\Data\\Sample Ticket Data.csv")
+df$Created <- as.character(df$Created)
+# next two import the given time as the timezone
+df$Created.utc <- as.POSIXct(df$Created, tz="UTC", format="%m/%d/%Y %H:%M")
+df$Created.cdt <- as.POSIXct(df$Created, tz="America/Chicago", format="%m/%d/%Y %H:%M")
+# change a timezone and change the 'time' reflected (new col example)
+df$created.utc.to.cdt <- df$Created.utc
+attributes(df$created.utc.to.cdt)$tzone <- "America/Chicago"
+
+# confirmed - timezone conversion proper 5 or 6 hours for DLS start/end
+df2 <- df %>%
+  select(ID, contains("create")) %>%
+  mutate(datediff = difftime(Created.cdt, Created.utc, "hours")) %>%
+  arrange(Created.cdt)
+
 #### 9/10/2017 - Dplyr deeper exercises; window functions & more ####
 
 # (refer to cheat sheets for dplyr / data wrangling)

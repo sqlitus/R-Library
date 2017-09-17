@@ -1,4 +1,4 @@
-# Workspace #
+#### Workspace #####
 
 ipak <- function(pkg){
   new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
@@ -7,5 +7,264 @@ ipak <- function(pkg){
   sapply(pkg, require, character.only = TRUE)
 }
 
-packages <- c("ggplot2", "tm", "sqldf", "scales","dplyr","tibble")
+packages <- c("ggplot2", "tm", "sqldf", "scales","dplyr", "tidyr", "tibble", "mailR","RColorBrewer","stringr","tidyverse", "tidytext")
 ipak(packages)
+packages <- c("slidy", "googleVis", "plotly")
+
+
+# import data & transformations (from library) - sample ticket data
+df <- read.csv("D:\\Work\\Libraries\\R Library\\Data\\Sample Ticket Data.csv")
+df$Created <- as.character(df$Created)
+df$Created <- as.POSIXct(df$Created, format="%m/%d/%Y %H:%M")
+df$Priority <- paste("P",df$Priority, sep = "")
+df$Priority <- as.factor(df$Priority)
+df$Created.Week <- as.Date(cut(df$Created, breaks = "week", start.on.monday = T))
+
+
+#### handy functions #####
+  # sequence of numbers
+  seq(5)
+  seq(length.out = 5)
+  seq(1,2, length.out = 5)
+
+
+#### 9/17/2017 - tidy text mining ch 1 - tidy text ####
+  
+  text <- c("Because I could not stop for Death -",
+            "He kindly stopped for me -",
+            "The Carriage held but just Ourselves -",
+            "and Immortality")
+  
+  text
+  text_df <- data_frame(line = seq(length(text)), textStuff = text)
+  text_df %>%
+    unnest_tokens(word, textStuff)
+  
+  
+  # personal example - sample ticket data
+  df.tm <- data_frame(ID = df$ID, Created = df$Created, Title = df$Title)
+  df.tm$Title <- as.character(df.tm$Title)
+  
+  # splits Title column into words, removes punc, converts lowercase, and turns into long dataframe (check args)
+  df.tm <- df.tm %>% unnest_tokens(output = title.words, input = Title, drop = F)
+  
+  # not in stopword list - with ! %in% or anti_join
+  df.tm.tidy <- df.tm %>%
+    filter(!(title.words %in% stop_words$word))
+  
+  df.tm.tidy <- df.tm %>%
+    anti_join(stop_words, by = c("title.words" = "word"))
+  
+  word.blacklist <- c("r10", "lane")
+  df.tm.tidy <- df.tm.tidy %>% filter(!(title.words %in% word.blacklist))
+
+  # count words, reorder word factor by level, top X, plot
+  df.tm.tidy %>%
+    count(title.words, sort = T) %>%
+    slice(1:5) %>%
+    mutate(title.words = reorder(title.words, n)) %>%
+    ggplot(aes(title.words, n, fill = title.words))+geom_bar(stat = "identity")+coord_flip()
+  ### find way to reverse x axis order ###
+    
+    # (quick compare)
+    df.tm.tidy %>%
+    count(title.words, sort = T) %>%
+    slice(1:5) 
+  
+  
+  ## jane austin
+  library(janeaustenr)
+  d <- data_frame(txt = prideprejudice)
+  d
+  
+  d %>%
+    unnest_tokens(word, txt)
+  
+  d %>%
+    unnest_tokens(sentence, txt, token = "sentences")
+  
+  # tokenize HTML
+  h <- data_frame(row = 1:2,
+                  text = c("<h1>Text <b>is<b>", "<a href='example.com'>here</a>"))
+  h %>%
+    unnest_tokens(word, text, format = "html")
+  
+seq(5, length.out = 10)
+
+
+#### 9/14/2017 - more ggplotly - add text to tooltip ####
+
+  p <- ggplot(df, aes(Location, fill=Store, text = paste("Number of reassigns: ", Num.Assigns)))+geom_bar()
+  ggplotly(p)
+  
+  # badass example: https://data.nozav.org/app/scatterD3/
+  # hover over legend
+  
+
+#### 9/14/2017 - regex extract/replace text ####
+
+  entries <- c ("Trial 1 58 cervicornis (52 match)", "Trial 2 60 terrestris (51 matched)", "Trial 8 109 flavicollis (101 matches)")
+  entries <- c(entries, "some more /\ text n' stuff", "ra ri ru re ro rarirurero ", "text not in (text in parenths) and (more in paren)",
+               "trial 5: the trip to trinity", "trial 6 - trinidad and trinity triangles tip trips, from trial 5")
+  # extract content in parenthesis; replace "(" OR ")"
+  str_extract_all(entries, "\\(.*\\)$") %>% str_replace_all("\\(|\\)", "")
+  substr(entries, start = str_locate(entries, "\\(.*"), stop = str_locate(entries, "\\)"))
+  
+  # extract the other text (not parenthesis)
+  str_replace_all(entries, "\\(.*\\)$", "") %>%
+    str_replace(" $", "")
+  
+  # find location & length of match (int vector)
+  r.a <- entries %>% str_locate("rr+")
+  r.b <- regexpr("rr+", entries)
+  
+  attributes(r.b)
+  attr(r.b, "match.length")
+  
+  # test - other chars
+  str_locate(entries, "\\bs")
+  str_extract_all(entries, "\\bs")
+  str_extract_all(entries, "r.{1}") # match r, then any other char after
+  str_extract_all(entries, "r[ei]") # match r, then e or i
+  
+  # find char matches at end of word / within word
+  str_locate_all(entries, "ra\\B")
+  str_locate_all(entries, "ra\\b")
+  regexpr("ra\\b", entries)
+  str_locate_all(entries, "ial\\b")
+  
+  # case insensitive
+  str_detect(entries, "(?i)tri")
+  str_locate_all(entries, "(?i)tri")
+  str_extract_all(entries, "(?i)tri")
+  
+  
+  # list all records with case-insensitive "trial", find trial & num, final all mentions of trials & nums, remove first trial mention
+  entries[grep("^(?i)TRIAL", entries)]
+  entries[grep("^trial", entries)]
+  str_extract(entries, "^(?i)trial [0-9]*")
+  str_extract_all(entries, "^(?i)trial [0-9]*")
+  str_replace(entries, "^(?i)trial [0-9]*", "")
+  
+  ## test regex with sample data
+  
+  # regex anchors. string at boundary of word.
+  df$Assigned.To
+  df.regex <- df %>% select(Assigned.To) %>% filter(grepl("A", df$Assigned.To))
+  df$Assigned.To[grep("A", df$Assigned.To)]
+  df$Assigned.To[grep("\\b(?i)A", df$Assigned.To)]
+  df$Assigned.To[grep("\\b(?i)e", df$Assigned.To)]
+  df$Assigned.To[grep("\\B(?i)e", df$Assigned.To)]
+  df$Assigned.To[grep("\\b(?i)e", df$Assigned.To)]
+
+#### 9/13/2017 - The R book 2.12 - Text, char strings ####
+
+# 2.12
+a <- c("one","two","three","f","f","f","f","f","f","f","f","f","f","f","f","f","f","f")
+b <- as.factor(a)
+length(a)
+str(length(a[3]))
+str(length(a[11]))
+length("lalala")
+length(b[1])
+attributes(b)
+nchar(a)
+which(a == "f")
+??concat
+
+# 2.12.1 - paste character strings together
+a.2 <- c("lala","blabla")
+a.3 <- c(a,a.2)
+a.3
+str(a.3)
+paste("alol","bbb")
+paste(a,a.2)
+
+
+
+
+
+
+
+#### 9/11/2017 - assign colors to factors ####
+
+  function(EXCELLENT_COLOR_REFERENCE){
+    # https://stackoverflow.com/questions/15282580/how-to-generate-a-number-of-most-distinctive-colors-in-r
+    # https://www.nceas.ucsb.edu/~frazier/RSpatialGuides/colorPaletteCheatsheet.pdf
+  }
+
+  #Some test data
+  dat <- data.frame(x=runif(10),y=runif(10),
+                    grp = rep(LETTERS[1:5],each = 2),stringsAsFactors = TRUE)
+  
+  #Create a custom color scale. create vector of color values, then change index names to the category...
+  library(RColorBrewer)
+  myColors <- brewer.pal(5,"Set1")
+  # change names of vector to DISTINCT values of a factor (levels)
+  names(myColors) <- levels(dat$grp) 
+  # ggplot argument for scale colors...
+  colScale <- scale_colour_manual(name = "grp",values = myColors)
+
+  #One plot with all the data
+  p <- ggplot(dat,aes(x,y,colour = grp)) + geom_point()
+  p1 <- p + colScale
+  
+  #A second plot with only four of the levels
+  p2 <- p %+% droplevels(subset(dat[4:10,])) + colScale
+  
+  
+  # unique color sclae workflow
+  # get levels of factors, get palette of equiv length ... (this will change colors if more are added on...)
+  
+  # get unique list - factor levels
+  analyst.list <- levels(df$Assigned.To)
+  analyst.list.2 <- paste(analyst.list, "lol")
+  analyst.list.3 <- c(analyst.list, analyst.list.2)
+
+  # diff colors tho with rainbow.
+  analyst.colors <- rainbow(length(analyst.list))
+  names(analyst.colors) <- analyst.list
+  analyst.colors.3 <- rainbow(length(analyst.list.3))
+  
+  # aes(color = axis)
+  analyst.plot <- df %>% ggplot(aes(x=Assigned.To, fill = Assigned.To))+geom_bar()
+  
+  # assign color to x axis with "..x.."
+  analyst.plot.2 <- df %>% ggplot(aes(x=Assigned.To, fill = ..x..))+geom_bar()
+  
+  colors.1 <- scale_fill_brewer(c(palette = "Set3"))
+  colors.2 <- scale_fill_continuous(low = "Red", high = "Blue")
+  colors.3 <- scale_fill_gradient(low = "Red", high = "Blue")
+  analyst.plot.2 + colors.2
+  
+  # easy stacked bar chart using fill
+  df %>% ggplot(aes(x=Store, fill = Assigned.To))+geom_bar()+scale_color_manual(values = myColors)
+  
+#### 9/10/2017 - mailR; import csv to vector
+
+  # import data & transformations (from library) - sample ticket data
+  df <- read.csv("D:\\Work\\Libraries\\R Library\\Data\\Sample Ticket Data.csv")
+  df$Created <- as.character(df$Created) %>%
+    as.POSIXct(format="%m/%d/%Y %H:%M")
+  
+  
+  sender <- "@gmail.com"
+  recipients <- c("@gmail.com")
+  send.mail(from = sender,
+            to = recipients,
+            subject = "Subject of the email",
+            body = "Body of the email",
+            smtp = list(host.name = "smtp.gmail.com", port = 465, 
+                        user.name = sender,            
+                        passwd = "", ssl = TRUE),
+            authenticate = TRUE,
+            send = TRUE)
+  
+  
+  # import csv list, rename column, convert to char vector
+  importList <- read.csv("D:\\Work\\Libraries\\R Library\\Data\\test list.csv", header = F)
+  names(importList) <- "person.list"
+  personList <- as.character(importList$`person List`)
+  
+  persons <- read.csv("D:\\Work\\Libraries\\R Library\\Data\\test list.csv", header = F)$V1
+  

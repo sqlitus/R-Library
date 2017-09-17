@@ -1,11 +1,11 @@
 ID,Created,FirstAssigned,Resolved,Support Group,Store,Classification,Assigned To,Priority,Num Assigns,Reopened,Title,Location
-IR1,8/8/2016 2:54,8/9/2016 0:12,8/14/2016 22:07,Help Desk,Lamar,Permission Request,Diego,2,3,Yes,R10 lane is frozen. Stuck on loading screen,MAV
-IR2,2/5/2017 12:57,2/6/2017 6:20,2/14/2017 18:43,Retail Support,Wells Branch,Scale Broken,Frank,3,2,No,cash register not working,WSP
-IR3,7/4/2016 19:16,7/4/2016 22:27,7/7/2016 20:42,Retail Payments,Lamar,Tax Issue,Kelly,4,4,No,lane is down. The lane won't do the thingerjig,BRL
-IR4,11/2/2016 7:21,11/2/2016 10:07,11/2/2016 17:03,Retail Payments,Hyde Park,Tax Issue,Joy,2,3,No,apple pay not working,ORT
-IR5,10/29/2016 10:27,10/29/2016 13:08,10/31/2016 0:26,Help Desk,Downtown,Permission Request,Bob,1,1,No,apple pay register won't accept credit card,NLB
-IR6,2/27/2017 20:07,2/27/2017 22:41,3/4/2017 2:41,Help Desk,Wells Branch,Email,Diego,2,1,No,lane keeps freezing up when we try to use coupon,GWS
-IR7,6/29/2016 22:24,7/1/2016 9:51,7/9/2016 21:52,Retail Payments,Downtown,Credit Card Issue,Joy,2,3,No,scale broken,MAD
+IR1,8/8/2016 2:54,8/9/2016 0:12,8/14/2016 22:07,Help Desk,Lamar,Permission Request,Diego,2,3,Yes,R10 lane is frozen. Stuck on loading screen (defect #4028),MAV
+IR2,2/5/2017 12:57,2/6/2017 6:20,2/14/2017 18:43,Retail Support,Wells Branch,Scale Broken,Frank,3,2,No,cash register not working defect 2020,WSP
+IR3,7/4/2016 19:16,7/4/2016 22:27,7/7/2016 20:42,Retail Payments,Lamar,Tax Issue,Kelly,4,4,No,lane is down. The lane won't do the thingerjig *MSR ,BRL
+IR4,11/2/2016 7:21,11/2/2016 10:07,11/2/2016 17:03,Retail Payments,Hyde Park,Tax Issue,Joy,2,3,No,apple pay not working MSR,ORT
+IR5,10/29/2016 10:27,10/29/2016 13:08,10/31/2016 0:26,Help Desk,Downtown,Permission Request,Bob,1,1,No,apple pay register won't accept credit card store 10359 defect - 4049,NLB
+IR6,2/27/2017 20:07,2/27/2017 22:41,3/4/2017 2:41,Help Desk,Wells Branch,Email,Diego,2,1,No,lane keeps freezing up when we try to use coupon store 20102 #4889,GWS
+IR7,6/29/2016 22:24,7/1/2016 9:51,7/9/2016 21:52,Retail Payments,Downtown,Credit Card Issue,Joy,2,3,No,scale broken 123-456-7890 10210 #4444,MAD
 IR8,5/5/2016 1:38,5/5/2016 14:53,5/7/2016 2:04,Retail Support,Lamar,Other,George,1,2,No,"“Dwell on the beauty of life. Watch the stars, and see yourself running with them.” ",MAV
 IR9,9/14/2016 9:08,9/15/2016 5:43,9/17/2016 12:43,Retail Support,Lamar,Lane Frozen,Hannah,2,4,No,"“You have power over your mind - not outside events. Realize this, and you will find strength.” ",WSP
 IR10,11/8/2016 3:43,11/8/2016 7:19,11/10/2016 13:53,Retail Payments,Sunset Valley,Tax Issue,Kelly,4,3,No,“The happiness of your life depends upon the quality of your thoughts.” ,BRL
