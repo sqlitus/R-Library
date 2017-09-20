@@ -7,13 +7,15 @@ ipak <- function(pkg){
   sapply(pkg, require, character.only = TRUE)
 }
 
-packages <- c("ggplot2", "tm", "sqldf", "scales","dplyr", "tidyr", "tibble", "mailR","RColorBrewer","stringr","tidyverse", "tidytext")
+packages <- c("ggplot2", "tm", "sqldf", "scales","dplyr", "tidyr", "tibble", "mailR","RColorBrewer","stringr","tidyverse", "tidytext",
+              "plotly")
 ipak(packages)
 packages <- c("slidy", "googleVis", "plotly")
 
 
 # import data & transformations (from library) - sample ticket data
 df <- read.csv("D:\\Work\\Libraries\\R Library\\Data\\Sample Ticket Data.csv")
+df$Title <- as.character(df$Title)
 df$Created <- as.character(df$Created)
 df$Created <- as.POSIXct(df$Created, format="%m/%d/%Y %H:%M")
 df$Priority <- paste("P",df$Priority, sep = "")
@@ -28,6 +30,52 @@ df$Created.Week <- as.Date(cut(df$Created, breaks = "week", start.on.monday = T)
   seq(1,2, length.out = 5)
 
 
+  
+#### 9/19/2017 - tidy text mining ch3 - analyzing word & document frequencies ####
+  
+  # summary table: total words per [store], and count by [store] and [word]
+  store_words <- df %>%
+    unnest_tokens(word, Title, drop = F) %>%
+    count(Store, word, sort = T) %>%
+    ungroup()
+    
+  total_words <- store_words %>%
+    group_by(Store) %>%
+    summarise(total = sum(n))
+  
+  store_words <- left_join(store_words, total_words)
+  
+  # this method doesn't summarize the whole table
+    mywords <- df %>%
+      unnest_tokens(word, Title) %>%
+      group_by(Store, word) %>%
+      mutate(store.word.count = n()) %>%
+      group_by(Store) %>%
+      mutate(store.words.total = n()) %>% ungroup()
+      
+    mywords %>% filter(word == "the", Store == "Hyde Park") %>% select(store.word.count, store.words.total)
+  
+  # plot not right
+  p <- ggplot(store_words, aes(n/total, fill = Store))+
+    geom_histogram(show.legend = F)+
+    xlim(NA, .0009)+
+    facet_wrap(~Store, ncol = 2)
+  ggplotly(p)
+  
+  p <- ggplot()+geom_histogram(
+    mapping = aes(n/total, fill = Store),
+    data = store_words
+  )+
+    facet_wrap(~Store, ncol = 2)
+  p
+  
+  ## !!! best way to ggplot IMO, data in ggplot, aes in layers !!!
+  p <- ggplot(store_words)+
+    geom_histogram(mapping = aes(n/total, fill = Store))+
+    facet_wrap(~Store, ncol = 2)
+  p
+  ggplotly(p)
+  
 #### 9/17/2017 - tidy text mining ch 1 - tidy text ####
   
   text <- c("Because I could not stop for Death -",
@@ -41,7 +89,7 @@ df$Created.Week <- as.Date(cut(df$Created, breaks = "week", start.on.monday = T)
     unnest_tokens(word, textStuff)
   
   
-  # personal example - sample ticket data
+  ## personal example - sample ticket data
   df.tm <- data_frame(ID = df$ID, Created = df$Created, Title = df$Title)
   df.tm$Title <- as.character(df.tm$Title)
   
@@ -73,21 +121,43 @@ df$Created.Week <- as.Date(cut(df$Created, breaks = "week", start.on.monday = T)
   
   
   ## jane austin
-  library(janeaustenr)
-  d <- data_frame(txt = prideprejudice)
-  d
-  
-  d %>%
-    unnest_tokens(word, txt)
-  
-  d %>%
-    unnest_tokens(sentence, txt, token = "sentences")
-  
-  # tokenize HTML
-  h <- data_frame(row = 1:2,
-                  text = c("<h1>Text <b>is<b>", "<a href='example.com'>here</a>"))
-  h %>%
-    unnest_tokens(word, text, format = "html")
+    library(janeaustenr)
+    d <- data_frame(txt = prideprejudice)
+    d
+    
+    d %>%
+      unnest_tokens(word, txt)
+    
+    d %>%
+      unnest_tokens(sentence, txt, token = "sentences")
+    
+    # tokenize HTML
+    h <- data_frame(row = 1:2,
+                    text = c("<h1>Text <b>is<b>", "<a href='example.com'>here</a>"))
+    h %>%
+      unnest_tokens(word, text, format = "html")
+    
+  ## 1.5 - word frequency comparison
+    
+    tidy.df <- df %>%
+      unnest_tokens(word, Title, drop = F) %>%
+      anti_join(stop_words) 
+    
+    frequency <- tidy.df %>%
+      count(Store, word) %>%
+      group_by(Store) %>%
+      mutate(proportion = n / sum(n)) %>%
+      select(-n) 
+      
+    frequency.p <- ggplot(frequency, aes(proportion, "Store"))+geom_abline(color = "gray40", lty = 2)+
+      geom_jitter(alpha = .05, size = 2.5, width = .3, height = .3)+
+      geom_text(aes(label = word), check_overlap = T, vjust = 1.5)+
+      # scale_x_log10(labels = percent_format())+
+      # scale_y_log10(labels = percent_format())+
+      scale_color_gradient(limits = c(0, 0.001), low = "darkslategray4", high = "gray75") +
+      facet_wrap(~Store)
+    
+    ggplotly(frequency.p)
   
 seq(5, length.out = 10)
 
@@ -95,7 +165,7 @@ seq(5, length.out = 10)
 #### 9/14/2017 - more ggplotly - add text to tooltip ####
 
   p <- ggplot(df, aes(Location, fill=Store, text = paste("Number of reassigns: ", Num.Assigns)))+geom_bar()
-  ggplotly(p)
+  ggplotly(p, tooltip = c("text","x"))
   
   # badass example: https://data.nozav.org/app/scatterD3/
   # hover over legend
