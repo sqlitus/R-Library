@@ -23,14 +23,57 @@ df$Priority <- as.factor(df$Priority)
 df$Created.Week <- as.Date(cut(df$Created, breaks = "week", start.on.monday = T))
 
 
+#### 9/24/2017 - diff ways to subset dataframe/vectors ####
+
+# factor vectors
+df[,"ID"] 
+df[,1] 
+df[,c("ID")] 
+df[,c(1)] 
+
+# dataframe
+df[,1:2]
+df[,c(1:2)]
+df[,c("ID", "Created")]
+df %>% select(1)
+df %>% select(ID)
+
+
+
 #### handy functions #####
+
   # sequence of numbers
   seq(5)
   seq(length.out = 5)
   seq(1,2, length.out = 5)
+  
+  # 9/23/2017 - for loops vs apply functions
+  # get all columns of [type] ... sapply instead of for loop
+  df[,sapply(X = df, FUN = is.integer)]
+  df[,sapply(df, is.factor)]
+  
+  numeric_col <- rep(FALSE, ncol(df))
+  for (i in 1:ncol(df)){
+    is.numeric(df[,i])
+  }
+  
 
+#### 9/23/2017 - read excel data ####
+  
+  library(tidyverse) # library(readxl)
+  # see all functions in package
+  ls("package:readxl")
+  
+  test <- read_excel("D:\\Datasets\\Food budget\\Food_2016.xlsx")
+  test %>% select(1:5)
+  test <- read_excel("D:\\Datasets\\Food budget\\Food_2016.xlsx", 5)
 
   
+
+  
+
+  
+
 #### 9/19/2017 - tidy text mining ch3 - analyzing word & document frequencies ####
   
   # summary table: total words per [store], and count by [store] and [word]
