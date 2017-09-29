@@ -10,8 +10,8 @@ ipak <- function(pkg){
 packages <- c("ggplot2", "tm", "sqldf", "scales","dplyr", "tidyr", "tibble", "mailR","RColorBrewer","stringr","tidyverse", "tidytext",
               "plotly")
 ipak(packages)
-packages <- c("slidy", "googleVis", "plotly")
-
+packages <- c("googleVis", "plotly", "ggthemes", "officer") # slidy?
+ipak(packages)
 
 # import data & transformations (from library) - sample ticket data
 df <- read.csv("D:\\Work\\Libraries\\R Library\\Data\\Sample Ticket Data.csv")
@@ -21,6 +21,58 @@ df$Created <- as.POSIXct(df$Created, format="%m/%d/%Y %H:%M")
 df$Priority <- paste("P",df$Priority, sep = "")
 df$Priority <- as.factor(df$Priority)
 df$Created.Week <- as.Date(cut(df$Created, breaks = "week", start.on.monday = T))
+
+
+
+#### 9/27/2017 - officer (Powerpoint)
+
+library(officer)
+# REFERENCE: https://davidgohel.github.io/officer/articles/powerpoint.html
+
+pp.plot <- ggplot(df, aes(Created.Week)) +
+  geom_bar()
+
+pp.plot
+
+# get layout details to use
+layout_summary(mydoc)
+layout_properties(mydoc)
+slide_summary(mydoc)
+
+# make OR read pp deck
+mydoc <- read_pptx(path = "C:\\Users\\Chris\\Downloads\\econ_update.pptx")
+
+# add slide, add text, select slide to manipulate
+mydoc <- mydoc %>%
+  add_slide(layout = "Title and Content", master = "Office Theme") %>%
+    ph_with_text(type = "title", str = "here is some Title text") %>%
+    ph_with_text(type = "ftr", str = "ftr text") %>%
+    ph_with_text(type = "dt", str = "dt text") %>%
+    ph_with_text(type = "sldNum", str = "sldNum text") %>%
+    ph_with_text(str = "Hello world body text", type = "body") %>%
+  add_slide(layout = "Section Header", master = "Office Theme") %>%
+    ph_with_text(type = "title", str = "another add slide with title text") %>%
+    ph_with_text(type = "ftr", str = "ftr text") %>%
+    ph_with_text(type = "dt", str = "dt text") %>%
+    ph_with_text(type = "sldNum", str = "sldNum text") %>%
+    ph_with_text(str = "Hello world body text", type = "body") %>%
+  on_slide(index = 3) %>%
+    ph_remove(type = "title") %>%
+    ph_with_text(type = "title", str = "REPLACED OLD TITLE") %>%
+    ph_with_table(type = "body", value = head(mtcars)) %>%
+  add_slide(layout = "Title and Content", master = "Office Theme") %>%
+    ph_with_text(type = "title", str = "last added slide title") %>%
+  ph_add_par() %>%
+    ph_add_text(str = "ph_add_text to the paragraph") 
+    # ph_add_par(level = 2) %>%
+    # ph_add_text(str = "Level 2") %>% 
+    # ph_add_par(level = 3) %>%
+    # ph_add_text(str = "Level 3")
+
+
+# write (print) the power point doc; will write over
+print(mydoc, target = "myNewPowerPoint.pptx") 
+
 
 
 #### 9/24/2017 - diff ways to subset dataframe/vectors ####
