@@ -22,9 +22,43 @@ df$Priority <- paste("P",df$Priority, sep = "")
 df$Priority <- as.factor(df$Priority)
 df$Created.Week <- as.Date(cut(df$Created, breaks = "week", start.on.monday = T))
 
+#### 9/29/2017 - beginning ngrams ####
+
+# bigrams - count (tf)
+df.bigram.tf <- df %>%
+  unnest_tokens(output = bigram, input = Title, token = "ngrams", n = 2) %>%
+  separate(bigram, c("word1", "word2"), sep = " ") %>%
+  filter(!word1 %in% stop_words$word, !word2 %in% stop_words$word) %>%
+  count(word1, word2, sort = TRUE)
+
+# bigrams - tf - window function
+df.bigram.tf.window <- df %>%
+  unnest_tokens(output = bigram, input = Title, token = "ngrams", n = 2, drop = FALSE) %>%
+  separate(bigram, c("word1", "word2"), sep = " ") %>%
+  filter(!word1 %in% stop_words$word, !word2 %in% stop_words$word) %>%
+  group_by(word1, word2) %>%
+  mutate(total.bigram = n()) %>%
+  arrange(desc(total.bigram))
+  
+# bigrams - tf-idf by [category], [category], word
+df.bigram.tf.idf <- df %>%
+  unnest_tokens(output = bigram, input = Title, token = "ngrams", n = 2) %>%
+  count(Classification, bigram, sort = TRUE) %>%
+  bind_tf_idf(Classification, bigram, n) 
+# plot it
+test <- df.bigram.tf.idf %>%
+  group_by(Classification) %>%
+  top_n(5, wt = tf_idf) %>%
+  ungroup %>%
+  mutate(Classification = factor(Classification) %>% forcats::fct_rev()) %>%
+  ggplot(aes(bigram, tf_idf, fill = Classification)) +
+  geom_bar(stat = "identity", alpha = .8, show.legend = FALSE) +
+  facet_wrap(~Classification, ncol = 2, scales = "free")
+test
 
 
-#### 9/27/2017 - officer (Powerpoint)
+
+#### 9/28/2017 - officer (Powerpoint) ####
 
 library(officer)
 # REFERENCE: https://davidgohel.github.io/officer/articles/powerpoint.html
