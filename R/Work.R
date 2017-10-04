@@ -7,9 +7,8 @@ ipak <- function(pkg){
   sapply(pkg, require, character.only = TRUE)
 }
 
-packages <- c("ggplot2", "tm", "sqldf", "scales","dplyr", "tidyr", "tibble", "mailR","RColorBrewer","stringr","tidyverse", "tidytext",
-              "plotly")
-ipak(packages)
+ipak(c("ggplot2", "tm", "sqldf", "scales","dplyr", "tidyr", "tibble", "mailR","RColorBrewer","stringr","tidyverse", 
+       "tidytext", "plotly"))
 packages <- c("googleVis", "plotly", "ggthemes", "officer") # slidy?
 ipak(packages)
 
@@ -21,6 +20,31 @@ df$Created <- as.POSIXct(df$Created, format="%m/%d/%Y %H:%M")
 df$Priority <- paste("P",df$Priority, sep = "")
 df$Priority <- as.factor(df$Priority)
 df$Created.Week <- as.Date(cut(df$Created, breaks = "week", start.on.monday = T))
+
+
+
+
+
+#### 10/1/2017 - R for Data Science ch5: data transformation ####
+
+str(1/49 * 49) 
+str(1)
+1/2*2 == 1
+
+test <- data_frame(c = c("a","a","a","b","b","b"), a = c(1,2,3,4,5,NA), b = c(5,10,15,20,NA,25))
+
+# na.rum = TRUE removes missinnnnnnnng values prior to computation, so that calcs do not = NULL (NA)
+test %>%
+  group_by(c) %>%
+  summarize(le.count = n(),
+            dist = mean(a, na.rm = TRUE),
+            delay = mean(b, na.rm = TRUE),
+            std = sd(a, na.rm = TRUE))
+test %>% 
+  count(c) %>%
+  mutate(dist = mean(a))
+
+
 
 #### 9/29/2017 - beginning ngrams ####
 

@@ -15,7 +15,22 @@ help.search(pattern = "optimisation|optimization", fields = c("title","concept")
 
 
 
+#### 10/3/2017 - !! more regex - extract defect number, import csv of valid stores / regions & find ####
+text <- data_frame(text = c("lane down due to defect # 4444", 
+                            "issue with scale, DEFECT 4444",
+                            "lane down due to defect. the new defect 4444",
+                            "pumps and bumps #1234"),
+                   title = c("R10 blah blah MW LOL", "mPos NE CIR stuff doing things", 
+                             "lane down region MA PRD house", "SP 10101 scale broke"))
 
+
+region <- data_frame(region = c("NE", "MA", "SP", "MW"))
+
+text %>%
+  mutate(defect.num = str_extract(str_extract(text$text, "(?i)defect.{0,5}\\d\\d\\d\\d"), "\\d\\d\\d\\d"),
+         smart.region = str_extract(text$title, paste0("(",region$region, ")", collapse = "|")))
+
+paste0("(", region$region, collapse = "|")
 
 
 #### 9/10/2017 - POSIX dates & timezone conversions ####
