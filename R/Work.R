@@ -22,7 +22,37 @@ df$Priority <- as.factor(df$Priority)
 df$Created.Week <- as.Date(cut(df$Created, breaks = "week", start.on.monday = T))
 
 
+#### 10/11/2017 - send outlook email with image ####
 
+# example: https://blog.mdneuzerling.com/2017/03/19/using-r-to-send-an-outlook-email-with-an-inline-image/
+
+
+#### 10/10/2017 - Randomizing Data ####
+
+# generating random data
+mynum <- 22
+mysample <- sample(1:mynum)
+myrnorm <- rnorm(mynum)
+myletters <- sample(LETTERS[1:4], mynum, replace = TRUE)
+mydates <- seq(as.Date("2017-01-01"), as.Date("2017-02-01"), by = "day") %>% sample(mynum, replace = TRUE)
+
+test <- data_frame(sample = mysample, rnorm = myrnorm, letters = myletters, date = mydates)
+ggplot(test, aes(letters)) + geom_bar()
+ggplot(test, aes(date)) + geom_bar()
+
+
+#### 10/10/2017 - ggplot color palettes ####
+ggplot(df, aes(Created.Week, fill = Support.Group)) +
+  geom_bar() +
+  facet_wrap(~Store) + 
+  ggtitle("PDF PICTURE")
+  # scale_fill_brewer(palette = "Set1")
+  scale_fill_manual(values = rainbow(22))
+ggsave(filename = "myplot.pdf")
+
+
+# base palette
+palette()
 
 
 #### 10/1/2017 - R for Data Science ch5: data transformation ####
