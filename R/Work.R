@@ -44,6 +44,7 @@ mtcars
 
 histogram_this <- function(df, v) ggplot(df, aes(as.numeric(v))) + geom_histogram()
 
+qplot(Time.To.Response, data = df)
 histogram_this(df, df$Time.To.Response)
 histogram_this(df, df$Time.To.Restore.Service)
 # plan: funct that identifies numeric vars, then histograms them, then plots these on a grid
@@ -64,6 +65,88 @@ for (i in 1:length(names(df))){
   paste(names(df)[i], class(df[,i]), if_else(class(df[,1] == "factor", "is a factor", "NOT FAC"))) %>% print()
   if (class(df[,1]) == "factor") {print("is a factor")}
 }
+
+# ggplot vs qplot
+ggplot(df, aes(Time.To.Response)) + geom_histogram()
+qplot(Time.To.Response, data = df) + scale_x_continuous(limits = c(0,2000))
+
+ggplot(df, aes(x = Priority)) + geom_bar()
+
+# plot change range automatically based on percentile; change binwidth, axis label intervals
+quantile(df$Time.To.Response, .5) # percentile
+df$Time.To.Response[df$Time.To.Response < quantile(df$Time.To.Response, .5)] # vector of percentile
+max(df$Time.To.Response); median(df$Time.To.Response); quantile(df$Time.To.Response, .5)
+ggplot(df, aes(Time.To.Response)) + geom_histogram(binwidth = 50)
+ggplot(df, aes(Time.To.Response)) + geom_histogram(binwidth = 50) + scale_x_continuous(limits = c(0,quantile(df$Time.To.Response, .9)))
+ggplot(df, aes(Time.To.Response)) + geom_histogram(binwidth = 50, fill = "#5760AB", color = "black") + scale_x_continuous(limits = c(0,1500), breaks = seq(0, 1500, 100))
+  
+ggplot(df, aes(Time.To.Response)) + geom_histogram(binwidth = 50) + facet_grid(.~Priority)
+
+filter(df, Store == "Lamar")
+subset(df, Store == "Lamar") # keeps row numbers 
+
+by(as.numeric(df$Time.To.Response), df$Store, summary)
+
+
+
+
+#### 10/28/2017 - multiplot function ####
+
+# method 1 (preferred): gridExtra package. Native/tidyverse?
+library(gridExtra)
+grid.arrange(plot.1, plot.2, ncol = 2)
+
+
+# method 2: custom function
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  library(grid)
+  
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+  
+  numPlots = length(plots)
+  
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                     ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+  
+  if (numPlots==1) {
+    print(plots[[1]])
+    
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+    
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+      
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
+multiplot(plot.1, plot.2, cols = 2)
+
+## method 3 (suck): base plotting system - multiple plots in one
+plot.1 <- histogram_this(df, df$Time.To.Response)
+histogram_this(df, df$Time.To.Response)
+plot.2 <- histogram_this(df, df$Time.To.Restore.Service)
+par(mfrow = c(1,2))
+attach(mtcars)
+par(mfrow=c(2,2))
+plot(wt,mpg, main="Scatterplot of wt vs. mpg")
+plot(wt,disp, main="Scatterplot of wt vs disp")
+hist(wt, main="Histogram of wt")
+boxplot(wt, main="Boxplot of wt")
+
 
 
 
