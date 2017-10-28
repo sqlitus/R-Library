@@ -8,8 +8,8 @@ ipak <- function(pkg){
 }
 
 ipak(c("ggplot2", "tm", "sqldf", "scales","dplyr", "tidyr", "tibble", "mailR","RColorBrewer","stringr","tidyverse", 
-       "tidytext", "plotly"))
-packages <- c("googleVis", "plotly", "ggthemes", "officer") # slidy?
+       "tidytext", "plotly", "wordcloud"))
+packages <- c("googleVis", "plotly", "ggthemes", "officer", "RDCOMClient") # slidy?
 ipak(packages)
 
 # import data & transformations (from library) - sample ticket data
@@ -21,6 +21,77 @@ df$Priority <- paste("P",df$Priority, sep = "")
 df$Priority <- as.factor(df$Priority)
 df$Created.Week <- as.Date(cut(df$Created, breaks = "week", start.on.monday = T))
 
+convert_to_date <- function(v){as.character(v) %>% as.POSIXct(format = "%m/%d/%Y %H:%M")}
+df$FirstAssigned <- convert_to_date(df$FirstAssigned)
+df$Resolved <- convert_to_date(df$Resolved)
+
+# Time Difference in units = minutes
+df$Time.To.Response <- difftime(df$FirstAssigned, df$Created, units = "mins")
+df$Time.To.Restore.Service <- difftime(df$Resolved, df$Created, units = "mins")
+df$Assigned.To.Resolve <- difftime(df$Resolved, df$FirstAssigned, units = "mins")
+
+#### mtcars stuff ####
+data(mtcars)
+mtcars
+
+
+
+
+#### Data Analysis with R ####
+
+# gonna use my sample ticket dataset (df)
+# 10/27/2017
+
+histogram_this <- function(df, v) ggplot(df, aes(as.numeric(v))) + geom_histogram()
+
+histogram_this(df, df$Time.To.Response)
+histogram_this(df, df$Time.To.Restore.Service)
+# plan: funct that identifies numeric vars, then histograms them, then plots these on a grid
+df %>% str()
+if (cla)
+class(df$ID)
+df[,1] %>% str()
+df$ID %>% str()
+df[,1] %>% class()
+df[,2] %>% class()
+df[,2][[1]] %>% class()
+df[,2][[1]] %>% str()
+class(df[,1]) == "factor"
+
+
+for (i in 1:length(names(df))){
+  paste(names(df)[i], class(df[,i])) %>% print()
+  paste(names(df)[i], class(df[,i]), if_else(class(df[,1] == "factor", "is a factor", "NOT FAC"))) %>% print()
+  if (class(df[,1]) == "factor") {print("is a factor")}
+}
+
+
+
+#### 10/16/2017 - word cloud ####
+wordcloud(df$Title, max.words = 100, random.order = FALSE, colors = df$Num.Assigns)
+wordcloud(df$Title, max.words = 50, colors = brewer.pal(8, "Dark2")[factor(df$Support.Group)], random.order = FALSE)
+
+# custom color ramp palette...
+colfunc <- colorRampPalette(c("red", "blue"))
+df$colors <- lookup(df$Num.Assigns, levels(df$Num.Assigns),
+                           rev(colfunc(length(levels(df$Num.Assigns)))))
+head(word.freq, 10)
+
+
+
+
+
+#### 10/14/2017 - which in ####
+a <- data_frame(x = c("one","two","three","four"))
+b <- c("two")
+filter(a, x %in% b)
+filter(a, !x %in% b)
+
+# match makes no sense; use %in%
+match(b, a)
+match(a,b)
+match("three", a)
+match(a, "three")
 
 #### 10/11/2017 - send outlook email with image ####
 
@@ -38,8 +109,8 @@ mydates <- seq(as.Date("2017-01-01"), as.Date("2017-02-01"), by = "day") %>% sam
 
 test <- data_frame(sample = mysample, rnorm = myrnorm, letters = myletters, date = mydates)
 ggplot(test, aes(letters)) + geom_bar()
-ggplot(test, aes(date)) + geom_bar()
 
+ggplot(test, aes(date, fill = as.factor(date))) + geom_bar()
 
 #### 10/10/2017 - ggplot color palettes ####
 ggplot(df, aes(Created.Week, fill = Support.Group)) +
@@ -53,6 +124,24 @@ ggsave(filename = "myplot.pdf")
 
 # base palette
 palette()
+colors()[1:10]
+sample(colors(), 5)
+
+# custom color palettes - discrete
+ggplot(df, aes(Store, fill = Store)) + geom_bar()
+ggplot(df, aes(Store, fill = Store)) + geom_bar() + scale_fill_brewer("Set2")
+ggplot(df, aes(Store, fill = Store)) + geom_bar() + scale_fill_manual(values = rainbow(10))
+ggplot(df, aes(Store, fill = Store)) + geom_bar() + scale_fill_manual(values = colors()[1:5])
+ggplot(df, aes(Created.Week, fill = as.factor(Created.Week))) + geom_bar() + 
+  scale_fill_manual(values = colors()[1:222])
+ggplot(df, aes(Created.Week, fill = as.factor(Created.Week))) + geom_bar() + scale_alpha()
+
+# continuous
+
+ggplot(df, aes(as.factor(Created.Week), y = Num.Assigns, fill = Num.Assigns)) + 
+  geom_bar(stat = "identity") + 
+  scale_color_gradient(low = "red", high = "blue")
+ggplot(df, aes(Location, sum(Num.Assigns))) + geom_point()
 
 
 #### 10/1/2017 - R for Data Science ch5: data transformation ####
