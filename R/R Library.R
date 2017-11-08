@@ -1,7 +1,4 @@
-
 #### R LIBRARY ####
-
-
 #### Help ####
 
 # search all help pages mentioning items
@@ -12,6 +9,45 @@ help.search(pattern = "optimisation|optimization", fields = c("title","concept")
 ## 7/17/2017 - created Library as normal R script
 ## ctrl+alt+O to see chapters
 
+
+
+
+
+
+
+
+#### 11/7/2017 - Kelley Kickstarter Analysis ####
+
+library(readxl)
+library(tidyverse)
+library(plotly)
+kk <- read_excel(path = "C:\\Users\\Chris\\Downloads\\KS_pinstats.xlsx")
+str(kk)
+kk$`Reward Tiers` <- as.factor(kk$`Reward Tiers`)
+kk$`Stretch Goals` <- as.factor(kk$`Stretch Goals`)
+
+ggplot(kk, aes(Goal)) + geom_density()
+ggplot(kk, aes(Goal)) + geom_density() + scale_x_continuous(breaks = seq(0,3000,100))
+ggplot(kk, aes(`Reward Tiers`, Goal)) + geom_boxplot()
+summary(kk$Goal)
+
+summary(kk$Funded)
+ggplot(kk, aes(Funded, Goal, color = `Reward Tiers`, size = Backers)) + geom_point()
+p <- ggplot(kk, aes(Backers, `Pins Pre-Ordered`, size = `Price per pin`)) + geom_point(alpha = .5)
+ggplotly(p)
+ggplot(kk, aes(Funded, Backers)) + geom_point(size = 12, alpha = .5, color = "blue")
+
+ggplot(kk, aes(`Campaign Length (days)`, Backers)) + geom_line()
+ggplot(kk, aes(`Campaign Length (days)`, Backers)) + geom_bar(stat = "identity")
+ggplot(kk, aes(Backers)) + geom_histogram()
+
+ggplot(kk, aes(`Stretch Goals`)) + geom_bar()
+
+cor(kk$Goal, kk$Funded)
+
+kk$funded.beyond.goal <- kk$Funded/kk$Goal * 100
+ggplot(kk, aes(kk$`Stretch Goals`, kk$funded.beyond.goal)) + geom_bar(stat = "identity")
+ggplot(kk, aes(funded.beyond.goal, fill = `Stretch Goals`)) + geom_histogram()
 
 
 

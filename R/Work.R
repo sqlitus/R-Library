@@ -7,8 +7,9 @@ ipak <- function(pkg){
   sapply(pkg, require, character.only = TRUE)
 }
 
-ipak(c("ggplot2", "tm", "sqldf", "scales","dplyr", "tidyr", "tibble", "mailR","RColorBrewer","stringr","tidyverse", 
-       "tidytext", "plotly", "wordcloud"))
+ipak("tidyverse")
+# ipak(c("ggplot2", "tm", "sqldf", "scales","dplyr", "tidyr", "tibble", "mailR","RColorBrewer","stringr","tidyverse", 
+#        "tidytext", "plotly", "wordcloud"))
 packages <- c("googleVis", "plotly", "ggthemes", "officer", "RDCOMClient") # slidy?
 ipak(packages)
 
@@ -35,6 +36,21 @@ data(mtcars)
 mtcars
 
 
+
+
+
+
+
+#### testing making named vectors from df values ####
+test <- df %>% group_by(Store) %>% count(Assigned.To)
+nrow(test)
+
+x <- test$Assigned.To
+names(x) <- test$Store
+
+
+  
+  
 
 
 #### Data Analysis with R ####
@@ -66,7 +82,7 @@ for (i in 1:length(names(df))){
   if (class(df[,1]) == "factor") {print("is a factor")}
 }
 
-# ggplot vs qplot
+# 10/28/2017 - ggplot vs qplot
 ggplot(df, aes(Time.To.Response)) + geom_histogram()
 qplot(Time.To.Response, data = df) + scale_x_continuous(limits = c(0,2000))
 
@@ -87,6 +103,47 @@ subset(df, Store == "Lamar") # keeps row numbers
 
 by(as.numeric(df$Time.To.Response), df$Store, summary)
 
+# 1 continuous var graph #2: frequency poly
+ggplot(df, aes(Time.To.Response)) + geom_histogram(binwidth = 50)
+ggplot(df, aes(Time.To.Response, color = Priority)) + geom_freqpoly()
+ggplot(df, aes(Time.To.Response, color = Priority)) + geom_density()
+qplot(x = Time.To.Response, data = df, color = Priority, geom = 'freqpoly')
+qplot(x = Time.To.Response, data = df, fill = Priority)
+qplot(x = as.numeric(Time.To.Response), data = df, fill = Priority) + scale_x_log10()
+
+# what priority has higher TTR?
+by(df$Time.To.Response, df$Priority, sum)
+df %>% group_by(Priority) %>% summarise(sum(Time.To.Response))
+
+
+# 1 category + 1 cont var graph #3: boxplot
+ggplot(df, aes(x = Priority, y = Time.To.Response)) + geom_boxplot()
+qplot(x = Priority, y = Time.To.Response, data = df, geom = 'boxplot')
+
+# incorrect way: this removes data points from the calculation; use above to slice the axis
+ggplot(df, aes(x = Priority, y = Time.To.Response)) + geom_boxplot() + scale_y_continuous(limits = c(0,2000))
+
+# correct way to change view of graph
+ggplot(df, aes(x = Priority, y = Time.To.Response)) + geom_boxplot() + coord_cartesian(ylim = c(0,2000))
+
+# by inspection is great for continuous vs category; complements box plot
+by(as.numeric(df$Time.To.Response), df$Priority, summary)
+by(as.numeric(df$Time.To.Response), df$Priority, sum)
+by(df, df$Priority, summary)
+
+# similar to manipulating to find individual values
+df %>% filter(Priority == "P1") %>% summarise(min(Created))
+df %>% filter(Priority == "P4") %>% summarise(mean(FirstAssigned))
+
+
+# ordered factor - re sort factor levels, and find min/max of factor
+factor(df$Location, levels = sort(levels(df$Location), decreasing = TRUE)) %>% levels()
+factor(df$Location, levels = rev(levels(df$Location))) %>% levels()
+factor(df$Location, levels = rev(levels(df$Location))) %>% levels() %>% min()
+factor(df$Location, levels = rev(levels(df$Location))) %>% levels() %>% max()
+factor(df$Location, levels = rev(levels(df$Location))) %>% levels() %>% median()
+
+
 
 
 
@@ -95,59 +152,6 @@ by(as.numeric(df$Time.To.Response), df$Store, summary)
 # method 1 (preferred): gridExtra package. Native/tidyverse?
 library(gridExtra)
 grid.arrange(plot.1, plot.2, ncol = 2)
-
-
-# method 2: custom function
-multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
-  library(grid)
-  
-  # Make a list from the ... arguments and plotlist
-  plots <- c(list(...), plotlist)
-  
-  numPlots = length(plots)
-  
-  # If layout is NULL, then use 'cols' to determine layout
-  if (is.null(layout)) {
-    # Make the panel
-    # ncol: Number of columns of plots
-    # nrow: Number of rows needed, calculated from # of cols
-    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
-                     ncol = cols, nrow = ceiling(numPlots/cols))
-  }
-  
-  if (numPlots==1) {
-    print(plots[[1]])
-    
-  } else {
-    # Set up the page
-    grid.newpage()
-    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
-    
-    # Make each plot, in the correct location
-    for (i in 1:numPlots) {
-      # Get the i,j matrix positions of the regions that contain this subplot
-      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
-      
-      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
-                                      layout.pos.col = matchidx$col))
-    }
-  }
-}
-multiplot(plot.1, plot.2, cols = 2)
-
-## method 3 (suck): base plotting system - multiple plots in one
-plot.1 <- histogram_this(df, df$Time.To.Response)
-histogram_this(df, df$Time.To.Response)
-plot.2 <- histogram_this(df, df$Time.To.Restore.Service)
-par(mfrow = c(1,2))
-attach(mtcars)
-par(mfrow=c(2,2))
-plot(wt,mpg, main="Scatterplot of wt vs. mpg")
-plot(wt,disp, main="Scatterplot of wt vs disp")
-hist(wt, main="Histogram of wt")
-boxplot(wt, main="Boxplot of wt")
-
-
 
 
 #### 10/16/2017 - word cloud ####
