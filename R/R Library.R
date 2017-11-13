@@ -50,6 +50,31 @@ ggplot(kk, aes(kk$`Stretch Goals`, kk$funded.beyond.goal)) + geom_bar(stat = "id
 ggplot(kk, aes(funded.beyond.goal, fill = `Stretch Goals`)) + geom_histogram()
 
 
+## price per backer
+kk$Funded / kk$Backers %>% plot()
+kk$price.per.backer <- kk$Funded / kk$Backers
+ggplot(kk, aes(kk$price.per.backer)) + geom_histogram()
+summary(kk$price.per.backer)
+
+## !! goal vs funding superplot w/ median lines & annotation
+ggplot(kk, aes(Goal, Funded, size = Backers, color = `Reward Tiers`)) + geom_point() + 
+  geom_hline(yintercept = median(kk$Funded), color = "firebrick") +
+  geom_vline(xintercept = median(kk$Goal), color = "green") +
+  annotate("text", 0, median(kk$Funded), vjust = -1, label = median(kk$Funded))
+  # geom_text(aes(0,median(kk$Funded), label = round(median(kk$Funded))), vjust = -1, size = 4)
+  # scale_y_continuous(breaks = c(seq(round(min(kk$Funded)), round(max(kk$Funded)), length.out = 5), round(mean(kk$Funded))))
+  # scale_y_continuous(breaks = c(seq(0, 10000, by = 1000), round(median(kk$Funded))))
+ggplotly(p)
+
+seq(min(kk$Goal), max(kk$Goal), length.out = 5)
+median(kk$Funded)
+
+
+
+test <- data_frame(x = c(1:10), y = c(1:10), col = rep(c("a","b"), 5))
+ggplot(test, aes(x,y)) + geom_point() + geom_hline(aes(yintercept = 7.1)) + 
+  geom_text(aes(0,7.1, label = 7.1))
+
 
 #### 10/3/2017 - !! more regex - extract defect number, import csv of valid stores / regions & find ####
 text <- data_frame(text = c("lane down due to defect # 4444", 

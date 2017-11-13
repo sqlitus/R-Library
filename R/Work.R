@@ -36,9 +36,71 @@ data(mtcars)
 mtcars
 
 
+#### word trend over time linechart entry ####
+library(tidyverse); library(tidytext); library(plotly)
+
+# unigrams; removing duplicate words per IR
+df.unigram <- df %>% unnest_tokens(output = word, input = Title, drop = F) %>% distinct()
+df.unigrams.byweek <- df.unigram %>% group_by(Created.Week, word) %>% count()
+p <- ggplot(df.unigrams.byweek, aes(Created.Week, n, fill = word)) + geom_area() +
+  theme(legend.position = "none")
+ggplotly(p)
+ggplot(df[df$Priority %in% c("P3", "P4") ,], aes(Created.Week, fill = Priority)) + geom_bar()
+
+test <- df %>% group_by(Created.Week) %>% count()
+ggplot(test, aes(Created.Week, n)) + geom_area()
+
+
+## new example
+a <- data_frame(value = round(rnorm(10, mean = 20, sd = 6)),
+                date = seq.Date(as.Date("2017-05-05"), as.Date("2017-05-14"), by = 1),
+                category = rep(c("cat a", "cat b"),5))
+a
+ggplot(a, aes(date, value)) + geom_line()
+
+
+## choose word example; plot function keeps same axis
+LinePlotForWord <- function(myword){
+  df.word.choose <- df.unigram %>% filter(word == myword) %>% group_by(Created.Week) %>% count()
+  ggplot(df.word.choose, aes(Created.Week, n)) + geom_line() +
+    # scale_x_continuous(limits = c( min(df.word.choose) , NA) )
+    expand_limits(x = min(df.unigram$Created.Week))
+}
+LinePlotForWord("lane")
+LinePlotForWord("the")
+LinePlotForWord("froze")
+
+
+#### RSelenium First Try ####
+
+install.packages("Rselenium")
+library(RSelenium)
+checkForServer() # search for and download Selenium Server java binary.  Only need to run once.
+startServer() # run Selenium Server binary
+remDr <- remoteDriver(browserName="firefox", port=4444) # instantiate remote driver to connect to Selenium Server
+remDr$open(silent=T) # open web browser
 
 
 
+
+#### custom functions for package ####
+
+# for monday-sunday weeks; week starts monday (day 1)
+
+x_mondays_ago <- function(x){
+  (Sys.Date() - 7 * x) + (1 - as.integer(format(Sys.Date(), format = "%u")))
+}
+x_mondays_ago(4)
+
+x_sundays_ago <- function(x){
+  (Sys.Date() - 7 * x) + (7 - as.integer(format(Sys.Date(), format = "%u")))
+}
+x_sundays_ago(1)
+
+x_weeks_y_days_ago <- function(x,y){
+  (Sys.Date() - 7 * x) + (y - as.integer(format(Sys.Date(), format = "%u")))
+}
+x_weeks_y_days_ago(2,7)
 
 
 #### testing making named vectors from df values ####
