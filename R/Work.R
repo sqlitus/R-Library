@@ -36,6 +36,54 @@ data(mtcars)
 mtcars
 
 
+
+#### cool background plot ####
+
+# various ways of including/excluding column parameters
+test <- df[,5:10]
+test <- df[,c("Assigned.To", "Reopened")]
+test <- df[, -which(names(df) %in% c("Reopened", "Assigned.To"))]
+test <- df %>% select(-Assigned.To)
+
+PlotWithBackground <- function(df, xval, facet){
+  d <- df        # Full data set
+  d_bg <- d[, -which(names(df) %in% c(facet))]  # Background Data - full without the 5th column (Species)
+  
+  ggplot(d, aes(x = xval, fill = facet)) +
+    geom_histogram(data = d_bg, fill = "grey", alpha = .5) +
+    geom_histogram(colour = "black") +
+    facet_wrap(~ facet) +
+    guides(fill = FALSE) +  # to remove the legend
+    theme_bw()              # for clean look overall
+}
+PlotWithBackground(iris, Sepal.Width, "Species")
+
+PlotWithBackground <- function(df, Sepal.Width, Species){
+  d <- df        # Full data set
+  d_bg <- d[, -5]  # Background Data - full without the 5th column (Species)
+  ggplot(d, aes(x = Sepal.Width, fill = Species)) +
+    geom_histogram(data = d_bg, fill = "grey", alpha = .5) +
+    geom_histogram(colour = "black") +
+    facet_wrap(~ Species) +
+    guides(fill = FALSE) +  # to remove the legend
+    theme_bw()              # for clean look overall
+}
+PlotWithBackground(iris, Sepal.Length, Species)
+PlotWithBackground(iris, Sepal.Width, Species)
+
+d <- iris        # Full data set
+d_bg <- d[, -5]  # Background Data - full without the 5th column (Species)
+
+ggplot(d, aes(x = Sepal.Width, fill = Species)) +
+  geom_histogram(data = d_bg, fill = "grey", alpha = .5) +
+  geom_histogram(colour = "black") +
+  facet_wrap(~ Species) +
+  guides(fill = FALSE) +  # to remove the legend
+  theme_bw()              # for clean look overall
+
+
+
+
 #### word trend over time linechart entry ####
 library(tidyverse); library(tidytext); library(plotly)
 
@@ -59,16 +107,16 @@ a
 ggplot(a, aes(date, value)) + geom_line()
 
 
-## choose word example; plot function keeps same axis
+## parameter dataset and ggplot; choose word example; plot function keeps same axis
 LinePlotForWord <- function(myword){
   df.word.choose <- df.unigram %>% filter(word == myword) %>% group_by(Created.Week) %>% count()
   ggplot(df.word.choose, aes(Created.Week, n)) + geom_line() +
-    # scale_x_continuous(limits = c( min(df.word.choose) , NA) )
-    expand_limits(x = min(df.unigram$Created.Week))
+    expand_limits(x = c(min(df.unigram$Created.Week),max(df.unigram$Created.Week)))
 }
 LinePlotForWord("lane")
 LinePlotForWord("the")
 LinePlotForWord("froze")
+LinePlotForWord("defect")
 
 
 #### RSelenium First Try ####
