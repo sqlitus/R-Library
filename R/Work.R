@@ -38,6 +38,7 @@ mtcars
 
 
 #### cool background plot ####
+library(ggplot2); library(tidyverse)
 
 # various ways of including/excluding column parameters
 test <- df[,5:10]
@@ -49,27 +50,44 @@ PlotWithBackground <- function(df, xval, facet){
   d <- df        # Full data set
   d_bg <- d[, -which(names(df) %in% c(facet))]  # Background Data - full without the 5th column (Species)
   
-  ggplot(d, aes(x = xval, fill = facet)) +
+  ggplot(d, aes_string(x = xval, fill = facet)) +
     geom_histogram(data = d_bg, fill = "grey", alpha = .5) +
     geom_histogram(colour = "black") +
-    facet_wrap(~ facet) +
+    facet_wrap(.~facet) +
     guides(fill = FALSE) +  # to remove the legend
     theme_bw()              # for clean look overall
 }
-PlotWithBackground(iris, Sepal.Width, "Species")
+PlotWithBackground(iris, c("Sepal.Width"), c("Species"))
 
-PlotWithBackground <- function(df, Sepal.Width, Species){
-  d <- df        # Full data set
-  d_bg <- d[, -5]  # Background Data - full without the 5th column (Species)
-  ggplot(d, aes(x = Sepal.Width, fill = Species)) +
-    geom_histogram(data = d_bg, fill = "grey", alpha = .5) +
-    geom_histogram(colour = "black") +
-    facet_wrap(~ Species) +
-    guides(fill = FALSE) +  # to remove the legend
-    theme_bw()              # for clean look overall
+
+#### 11/14/2017: parameterized ggplot function w/ optional facet argument & background ####
+
+Plot.One.Continuous <- function(df, xval, facet){
+  p <- ggplot(df, aes_string(xval)) + geom_histogram() + theme_bw()
+  if (!missing(facet)){
+    df_bg <- df[,-which(names(df) %in% c(facet))]
+    p <- p + facet_wrap(as.formula(paste("~",facet))) + 
+      geom_histogram(data = df_bg, fill = "grey", alpha = .5)
+  }
+  # p
+  return(p)
 }
-PlotWithBackground(iris, Sepal.Length, Species)
-PlotWithBackground(iris, Sepal.Width, Species)
+Plot.One.Continuous(df, "Time.To.Response", facet = "Priority")
+Plot.One.Continuous(df, "Num.Assigns")
+Plot.One.Continuous(df, "Time.To.Restore.Service", "Priority")
+names(df)
+class(df$ID)
+str(df)
+
+# which column names are numeric, factor, etc
+col.choice <- names(df)[sapply(df, is.numeric)]
+col.choice <- names(df)[sapply(df, is.factor)]
+select(df, col.choice) %>% str()
+df[,col.choice] %>% str() # subset df returns vector if just 1 column
+
+
+
+
 
 d <- iris        # Full data set
 d_bg <- d[, -5]  # Background Data - full without the 5th column (Species)
