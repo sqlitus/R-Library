@@ -1,0 +1,63 @@
+---
+title: "Class - Data Analysis with R"
+author: "Chris"
+date: "November 20, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(tidyverse)
+data(diamonds)
+```
+
+## explore
+```{r Explore Data}
+summary(diamonds)
+dim(diamonds)
+nrow(diamonds)
+ncol(diamonds)
+str(diamonds)
+
+```
+
+
+# helper functions
+```{r Helper Functions, echo = FALSE}
+CountNumericColumns <- function(df){
+  x = 0
+  for (i in 1:ncol(df)){
+    if (is.numeric(df[[i]]))
+      x=x+1
+  }
+  return(x)
+}
+CountFactorColumns <- function(df){
+  x = 0
+  for (i in 1:ncol(df)){
+    if (is.factor(df[[i]])) x = x + 1
+  }
+  return(x)
+}
+
+```
+
+# using helper functions
+```{r Run something, echo = FALSE}
+CountNumericColumns(diamonds)
+CountFactorColumns(diamonds)
+
+str(diamonds)
+diamonds$color %>% levels() %>% min()
+```
+
+```{r EDA, echo=FALSE}
+ggplot(diamonds, aes(price)) + geom_histogram() + 
+  geom_vline(xintercept = mean(diamonds$price), color = "red") +
+  annotate("text", mean(diamonds$price), 5555, 
+           label = paste("Mean:",round(mean(diamonds$price))), vjust = 1, angle = 90) +
+  geom_vline(xintercept = median(diamonds$price), color = "blue") +
+  annotate("text", median(diamonds$price), 5555,
+           label = paste("Median:", median(diamonds$price)), vjust = 1, angle = 90)
+```
