@@ -53,11 +53,41 @@ diamonds$color %>% levels() %>% min()
 ```
 
 ```{r EDA, echo=FALSE}
+
+Mode <- function(x) {
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
+library(grid)
+
 ggplot(diamonds, aes(price)) + geom_histogram() + 
   geom_vline(xintercept = mean(diamonds$price), color = "red") +
-  annotate("text", mean(diamonds$price), 5555, 
+  annotate("text", x = mean(diamonds$price), y = 5555,
            label = paste("Mean:",round(mean(diamonds$price))), vjust = 1, angle = 90) +
   geom_vline(xintercept = median(diamonds$price), color = "blue") +
-  annotate("text", median(diamonds$price), 5555,
-           label = paste("Median:", median(diamonds$price)), vjust = 1, angle = 90)
+  annotate("text", x = median(diamonds$price), y = 5555,
+           label = paste("Median:", median(diamonds$price)), vjust = 1, angle = 90) +
+  geom_vline(xintercept = Mode(diamonds$price), color = "green") +
+  annotate("text", x = Mode(diamonds$price), y = 2222,
+           label = paste("Mode:", Mode(diamonds$price)), vjust = 1, angle = 90) +
+  scale_x_continuous(breaks = round(c(pretty(diamonds$price, 4), mean(diamonds$price))))
+  # annotation_custom(textGrob("xyz", gp = gpar(col = "red")), 
+  #                   xmin = 30, xmax = 555, ymin = .25, ymax = 5)
+  # scale_x_continuous(breaks = c(0, 5000, 10000, 3000))
+
+ggplot(diamonds, aes(x = "all diamonds", y = price)) + geom_boxplot()
+ggplot(diamonds, aes(x = color, y = price)) + geom_boxplot()
+  
+```
+
+
+```{r Explore One Variable}
+library(dplyr)
+diamonds$price[diamonds$price < 500] %>% length()
+diamonds$price[diamonds$price < 250] %>% length()
+diamonds$price[diamonds$price >= 15000] %>% length()
+
+
+
+Mode(diamonds$price)
 ```
