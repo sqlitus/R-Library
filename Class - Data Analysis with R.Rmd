@@ -61,6 +61,11 @@ Mode <- function(x) {
 library(grid)
 
 ggplot(diamonds, aes(price)) + geom_histogram() + 
+  facet_wrap(~cut, scales = "free") +
+  scale_x_continuous(trans = "log10")
+  # scale_x_continuous(formatter = "log10")
+
+  # annotation lines
   geom_vline(xintercept = mean(diamonds$price), color = "red") +
   annotate("text", x = mean(diamonds$price), y = 5555,
            label = paste("Mean:",round(mean(diamonds$price))), vjust = 1, angle = 90) +
@@ -69,7 +74,10 @@ ggplot(diamonds, aes(price)) + geom_histogram() +
            label = paste("Median:", median(diamonds$price)), vjust = 1, angle = 90) +
   geom_vline(xintercept = Mode(diamonds$price), color = "green") +
   annotate("text", x = Mode(diamonds$price), y = 2222,
-           label = paste("Mode:", Mode(diamonds$price)), vjust = 1, angle = 90) +
+           label = paste("Mode:", Mode(diamonds$price)), vjust = 1, angle = 90)
+
+  
+  # annotation axis ticks. not working well
   scale_x_continuous(breaks = round(c(pretty(diamonds$price, 4), mean(diamonds$price))))
   # annotation_custom(textGrob("xyz", gp = gpar(col = "red")), 
   #                   xmin = 30, xmax = 555, ymin = .25, ymax = 5)
@@ -83,11 +91,22 @@ ggplot(diamonds, aes(x = color, y = price)) + geom_boxplot()
 
 ```{r Explore One Variable}
 library(dplyr)
+
+# counts
 diamonds$price[diamonds$price < 500] %>% length()
 diamonds$price[diamonds$price < 250] %>% length()
 diamonds$price[diamonds$price >= 15000] %>% length()
 
-
-
+# mode
 Mode(diamonds$price)
+
+# max per group
+diamonds %>% select(cut, price) %>% group_by(cut) %>% 
+  summarise(maxprice = max(price), minprice = min(price), medianprice = median(price)) %>%
+  arrange(desc(maxprice))
+
+# summary stats of one variable by another
+by(diamonds$price, diamonds$cut, summary)
+by(diamonds[,"price"], diamonds[,"cut"], summary)
+
 ```

@@ -14,6 +14,48 @@ help.search(pattern = "optimisation|optimization", fields = c("title","concept")
 
 
 
+#### 11/15/2017 - parameterized ggplot function w/ optional facet argument ####
+library(ggplot2); library(tidyverse)
+
+# various ways of including/excluding column parameters
+test <- df[,5:10]
+test <- df[,c("Assigned.To", "Reopened")]
+test <- df[, -which(names(df) %in% c("Reopened", "Assigned.To"))]
+test <- df %>% select(-Assigned.To)
+
+## online twitter example
+PlotWithBackground <- function(df, xval, facet){
+  d <- df        # Full data set
+  d_bg <- d[, -which(names(df) %in% c(facet))]  # Background Data - full without the 5th column (Species)
+  
+  ggplot(d, aes_string(x = xval, fill = facet)) +
+    geom_histogram(data = d_bg, fill = "grey", alpha = .5) +
+    geom_histogram(colour = "black") +
+    facet_wrap(as.formula(paste("~",facet))) +
+    guides(fill = FALSE) +  # to remove the legend
+    theme_bw()              # for clean look overall
+}
+PlotWithBackground(iris, "Sepal.Width", c("Species"))
+
+
+## sample ticket data example
+Plot.One.Continuous <- function(df, xval, facet){
+  p <- ggplot(df, aes_string(xval)) + geom_histogram() + theme_bw()
+  if (!missing(facet)){
+    df_bg <- df[,-which(names(df) %in% c(facet))]
+    p <- p + facet_wrap(as.formula(paste("~",facet))) + 
+      geom_histogram(data = df_bg, fill = "grey", alpha = .5)
+  }
+  # p
+  return(p)
+}
+Plot.One.Continuous(df, "Time.To.Response", facet = "Priority")
+Plot.One.Continuous(df, "Time.To.Response")
+Plot.One.Continuous(df, "Num.Assigns")
+Plot.One.Continuous(df, "Time.To.Restore.Service", "Priority")
+names(df)
+class(df$ID)
+str(df)
 
 
 #### 11/7/2017 - Kelley Kickstarter Analysis ####
