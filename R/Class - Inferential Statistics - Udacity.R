@@ -34,3 +34,20 @@
   # how many karma points to be in top 5%? (work backwards)
   1.645 * 4.8 + 13
   
+# Lesson 2: Estimation
+  library(tidyverse)
+  engagement.ratio <- read.delim("clipboard")
+  names(engagement.ratio)[1] <- "er"
+  ggplot(engagement.ratio, aes(er)) + geom_histogram()
+  summary(engagement.ratio)
+  sd(engagement.ratio$er)
+  sd(engagement.ratio[["er"]])
+  
+  # EDA function - take in dataframe and column and return analysis
+  f_estimation <- function(df, col){
+    o1 <- summary(df[[col]])
+    o2 <- sd(df[[col]])
+    o3 <- ggplot(df, aes_string(col)) + geom_histogram()
+    return(list(summary = o1, sd = o2, plot = o3))
+  }
+  f_estimation(engagement.ratio, "er")

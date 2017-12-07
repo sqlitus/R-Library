@@ -14,6 +14,43 @@ help.search(pattern = "optimisation|optimization", fields = c("title","concept")
 
 
 
+#### 12/6/2017 - data mining / EDA function ####
+
+# input df, spit out analysis for columns of choice...
+f.eda <- function(df, col1, col2){
+  out1 <- summary(df[[col1]])
+  out2 <- sd(df[[col1]])
+  out3 <- ggplot(df, aes_string(col1)) + geom_histogram()
+  out4 <- ggplot(df, aes_string(x = as.factor(0), y = col1)) + geom_boxplot()
+  return(list(out1, out2, out3, out4))
+}
+f.eda(engagement.ratio, "er")[3]
+
+
+
+#### 12/6/2017 - more ways to index data frames ####
+
+# returns data frame
+df[1]
+df["ID"]
+
+# returns vector
+df[[1]] 
+df[["ID"]]
+df[,1] 
+df$ID 
+df$"ID"
+
+# index of vector - returns scalar
+df[[1]][1] # returns vector then first element
+df$ID[2]
+df["ID"][[1]]
+df["ID"][1] %>% str()
+
+
+
+
+
 #### 11/15/2017 - parameterized ggplot function w/ optional facet argument ####
 library(ggplot2); library(tidyverse)
 

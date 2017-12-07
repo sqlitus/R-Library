@@ -3,12 +3,14 @@ title: "Class - Data Analysis with R"
 author: "Chris"
 date: "November 20, 2017"
 output: html_document
+runtime: shiny
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(ggplot2)
 library(tidyverse)
+library(shiny)
 data(diamonds)
 ```
 
@@ -60,28 +62,39 @@ Mode <- function(x) {
 }
 library(grid)
 
-ggplot(diamonds, aes(price)) + geom_histogram() + 
-  facet_wrap(~cut, scales = "free") +
-  scale_x_continuous(trans = "log10")
-  # scale_x_continuous(formatter = "log10")
 
-  # annotation lines
-  geom_vline(xintercept = mean(diamonds$price), color = "red") +
-  annotate("text", x = mean(diamonds$price), y = 5555,
-           label = paste("Mean:",round(mean(diamonds$price))), vjust = 1, angle = 90) +
-  geom_vline(xintercept = median(diamonds$price), color = "blue") +
-  annotate("text", x = median(diamonds$price), y = 5555,
-           label = paste("Median:", median(diamonds$price)), vjust = 1, angle = 90) +
-  geom_vline(xintercept = Mode(diamonds$price), color = "green") +
-  annotate("text", x = Mode(diamonds$price), y = 2222,
-           label = paste("Mode:", Mode(diamonds$price)), vjust = 1, angle = 90)
+# shiny input
+selectInput("n_breaks", label = "Number of bins:",
+              choices = c(10, 20, 35, 50), selected = 20)
+
+renderPlot({
+
+# still needs work on adjusting annotation labels
+ggplot(diamonds, aes(price)) + geom_histogram(bins = as.numeric(input$n_breaks)) + 
+  facet_wrap(~cut, scales = "free") +
+  scale_x_continuous(trans = "log10") +
+  geom_vline(xintercept = mean(diamonds$price), color = "aquamarine") +
+  # annotate("text", x = mean(diamonds$price), y = 5555,
+           # label = paste("Mean:",round(mean(diamonds$price))), vjust = 1, angle = 90) +
+  geom_vline(xintercept = median(diamonds$price), color = "magenta")
+  # annotate("text", x = median(diamonds$price), y = 5555,
+           # label = paste("Median:", median(diamonds$price)), vjust = 1, angle = 90) +
+  
+  
+  # mode is pretty useless on a histogram
+  # geom_vline(xintercept = Mode(diamonds$price), color = "green")
+  # annotate("text", x = Mode(diamonds$price), y = 2222,
+           # label = paste("Mode:", Mode(diamonds$price)), vjust = 1, angle = 90)
 
   
   # annotation axis ticks. not working well
-  scale_x_continuous(breaks = round(c(pretty(diamonds$price, 4), mean(diamonds$price))))
+  # scale_x_continuous(formatter = "log10") 
+  # scale_x_continuous(breaks = round(c(pretty(diamonds$price, 4), mean(diamonds$price))))
   # annotation_custom(textGrob("xyz", gp = gpar(col = "red")), 
   #                   xmin = 30, xmax = 555, ymin = .25, ymax = 5)
   # scale_x_continuous(breaks = c(0, 5000, 10000, 3000))
+
+})
 
 ggplot(diamonds, aes(x = "all diamonds", y = price)) + geom_boxplot()
 ggplot(diamonds, aes(x = color, y = price)) + geom_boxplot()
@@ -105,8 +118,26 @@ diamonds %>% select(cut, price) %>% group_by(cut) %>%
   summarise(maxprice = max(price), minprice = min(price), medianprice = median(price)) %>%
   arrange(desc(maxprice))
 
-# summary stats of one variable by another
+# summary stats of price by category
 by(diamonds$price, diamonds$cut, summary)
 by(diamonds[,"price"], diamonds[,"cut"], summary)
+by(diamonds$price, diamonds$color, summary)
 
+# visual summaries - boxplot
+ggplot(diamonds, aes(cut, price)) + geom_boxplot()
+
+by(diamonds$price, diamonds$carat, summary)
+
+ggplot(diamonds, aes(x = carat)) + geom_histogram()
+
+# PARAMETERIZE THIS ##
+ggplot(diamonds, aes(x = carat, y = price, color = color, size = depth)) + geom_point() + 
+  geom_vline(xintercept = median(diamonds$carat), color = "red") +
+  geom_hline(yintercept = median(diamonds$price), color = "green") +
+  geom_hline(yintercept = mean(diamonds$price), color = "darkgreen") +
+  annotate(geom = "text", x = max(diamonds$carat), y = median(diamonds$price), 
+           label = paste0("Median price: ", median(diamonds$price)), vjust = -.5, hjust = 1)
+
+ggplot(diamonds, aes(x = factor("price"), y = price)) + geom_boxplot()
+summary(diamonds$price)
 ```
