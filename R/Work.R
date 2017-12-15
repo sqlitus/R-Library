@@ -31,9 +31,13 @@ df$Time.To.Response <- difftime(df$FirstAssigned, df$Created, units = "mins")
 df$Time.To.Restore.Service <- difftime(df$Resolved, df$Created, units = "mins")
 df$Assigned.To.Resolve <- difftime(df$Resolved, df$FirstAssigned, units = "mins")
 
-#### mtcars stuff ####
-data(mtcars)
-mtcars
+#### Webscrape Project ####
+# regularly scrape websites to df
+# tm on df
+# plot
+# shiny dashboard choose inputs
+
+
 
 
 
@@ -83,7 +87,7 @@ LinePlotForWord("defect")
 
 #### RSelenium First Try ####
 
-install.packages("Rselenium")
+install.packages("RSelenium")
 library(RSelenium)
 checkForServer() # search for and download Selenium Server java binary.  Only need to run once.
 startServer() # run Selenium Server binary

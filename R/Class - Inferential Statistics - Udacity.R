@@ -72,7 +72,7 @@ f_estimation_sample <- function(xbar, mu, stdev, sample.size, tails = NULL){
   # to left of z score (flip if xbar is below mu)
   cdf <- pnorm(abs(z.score.sample))
   p.value = pnorm(abs(z.score.sample), lower.tail = FALSE)
-  two.sided.p.value <- 2 * pnorm(-abs(z.score.sample))
+  two.sided.p.value <- 2 * pnorm(-abs(z.score.sample)) # these pnorm formulas are the same
   
   conf.int.95 <- c(xbar - 1.96 * std.err, xbar + 1.96 * std.err)
   interval <- conf.int.95[2] - conf.int.95[1]
@@ -179,3 +179,92 @@ myrandom <- rnorm(1000)
 plot(myseq, mydensities)
 plot(myseq, mycumulative)
 hist(myrandom, breaks = 30)
+
+
+
+
+#### Chapter 4: T-Tests ####
+
+# degrees of freedom = (n-1)^2
+# n - 1 = effective sample size
+# - independent pieces of information to estimate another piece of information
+# t-statistics is like z-score
+# USE SAMPLE STANDARD DEVIATION (n-1 instead of n)
+
+f_estimation_t_test <- function(xbar, mu, s, n){
+  t <- (xbar - mu) / (s / sqrt(n))
+}
+
+finch <- read.delim("clipboard")
+summary(finch); length(finch$Beak.widths.of.finches.now)
+length(finch$Beak.widths.of.finches.now)
+
+f_estimation_t_vector <- function(v, mu0, tails = 1){
+  o1 <- summary(v)
+  s <- sd(v) # default sd function is sample standard dev
+    
+  if (missing(mu0)){
+    return(list(summary = o1, s = s))
+  } else {
+    t <- (mean(v) - mu0) / (s / sqrt(length(v)))
+    p <- pt(q = -abs(t), df = length(v) - 1)
+    if (tails == 1){
+      p <- pt(q = abs(t), df = length(v) - 1, lower.tail = FALSE)
+    } else {
+      p <- 2 * pt(q = abs(t), df = length(v) - 1, lower.tail = FALSE)
+    }
+    return(list(summary = o1, s = s, t = t, p = p, tails = tails))
+  }
+}
+f_estimation_t_vector(finch$Beak.widths.of.finches.now, 6.07)
+f_estimation_t_vector(finch$Beak.widths.of.finches.now)
+f_estimation_t_vector(c(5,19,11,23,12,7,3,21), mu0 = 10, tails = 2)
+
+f_estimation_t_test <- function(xbar, mu, s, n, two.tail.prob){
+  # need to alter func for 1 or 2 tailed test ...
+  t <- (xbar - mu) / (s / sqrt(n))
+  cohen.d <- (xbar - mu) / s
+  std.err <- s / sqrt(n)
+  t.critical <- qt(p = two.tail.prob, df = n-1, lower.tail = F) # prob in single tail of two tailed test
+  two.tail.95.int <- c(xbar - (two.tail.prob * std.err), xbar + (two.tail.prob * std.err))
+  margin.of.err <- t.critical * std.err
+  return(list(t = t, cohen.d = cohen.d, std.err = std.err, t.critical = t.critical,
+              two.tail.95.int = two.tail.95.int, margin.of.err = margin.of.err))
+}
+f_estimation_t_test(1700, 1830, 200, 25, .025)
+f_estimation_t_test(1700, 1830, 200, 100, .025)
+
+
+
+# differences in populations / sample means
+# keyboard errors comparison example
+keyboard <- read.delim("clipboard")
+
+f_estimation_t_vector(keyboard$QWERTY.errors)
+f_estimation_t_vector(keyboard$Alphabetical.errors)
+
+# point estimate - difference between means
+keyboard$difference <- keyboard$QWERTY.errors - keyboard$Alphabetical.errors
+# !!! when comparing sample mean,s use SD of the differences !!!!
+sd(keyboard$difference)
+
+f_estimation_t_vector(keyboard$QWERTY.errors, mean(keyboard$Alphabetical.errors), tails = 1)
+f_estimation_t_test(5.08, mu = 7.8, s = 3.69, n = 25, .025)
+
+(5.08 - 7.8) / (3.69 / sqrt(25))
+
+
+f_estimation_t_samples <- function(v1, v2, alpha = .05, tails = 2){
+  # sample means comparison
+  if (length(v1) != length(v2)) stop("error: vectors not same length")
+  diff <- v1 - v2
+  s <- sd(diff)
+  std.err <- s / sqrt(length(v1))
+  t <- (mean(v1) - mean(v2)) / std.err
+  cohen.d <- mean(diff) / s
+  t.critical <- qt(p = alpha / tails, df = length(v1)-1, lower.tail = F)
+  CI <- c(mean(diff) - (t.critical * std.err), mean(diff) + (t.critical * std.err))
+  return(list(s = s, std.err = std.err, t = t, cohen.d = cohen.d, t.critical = t.critical,
+              confidence.interval = CI))
+}
+f_estimation_t_samples(keyboard[[1]], keyboard[[2]])

@@ -14,6 +14,40 @@ help.search(pattern = "optimisation|optimization", fields = c("title","concept")
 
 
 
+#### 12/13/2017 - functions & returning values ####
+
+# function returns the FIRST return
+# also can stop function execution w/ stop("insert error message here")
+test.f <- function(x){
+  if (x > 5) return("> 5")
+  return ("x <= 5")
+}
+test.f(7)
+test.f(4)
+
+# can return vector instead of list
+test.f.2 <- function(x, list = "no"){
+  x = x
+  y = x * 2
+  z = ""
+  if (x>5) z = "x > 5"
+  if (list == "no") return(c(x,y,z))
+  return(list(x = x, y = y, z = z))
+}
+test.f.2(4)
+test.f.2(6)
+test.f.result <- test.f.2(6)
+test.f.result[1]
+
+test.f.2(4, "yes")
+test.f.2(6, "a")
+test.f.result <- test.f.2(6, "a")
+test.f.result[1]
+test.f.result[[1]]
+
+
+
+
 #### 12/6/2017 - data mining / EDA function ####
 
 # input df, spit out analysis for columns of choice...
