@@ -62,7 +62,7 @@ f_estimation(engagement.ratio, "er", 20, .13)
 # estimate probabilities from a sample
 f_estimation_sample <- function(xbar, mu, stdev, sample.size, tails = NULL){
   
-  # 'standard error of the mean'
+  # 'standard error of the mean': use when building a Confidence Interval
   std.err <- stdev/sqrt(sample.size)
   
   # num of standard deviations the sample {point | mean} is from mu
@@ -191,10 +191,6 @@ hist(myrandom, breaks = 30)
 # t-statistics is like z-score
 # USE SAMPLE STANDARD DEVIATION (n-1 instead of n)
 
-f_estimation_t_test <- function(xbar, mu, s, n){
-  t <- (xbar - mu) / (s / sqrt(n))
-}
-
 finch <- read.delim("clipboard")
 summary(finch); length(finch$Beak.widths.of.finches.now)
 length(finch$Beak.widths.of.finches.now)
@@ -255,7 +251,7 @@ f_estimation_t_test(5.08, mu = 7.8, s = 3.69, n = 25, .025)
 
 
 f_estimation_t_samples <- function(v1, v2, alpha = .05, tails = 2){
-  # sample means comparison
+  # comparison using sample means instead of population vs mean
   if (length(v1) != length(v2)) stop("error: vectors not same length")
   diff <- v1 - v2
   s <- sd(diff)
@@ -268,3 +264,78 @@ f_estimation_t_samples <- function(v1, v2, alpha = .05, tails = 2){
               confidence.interval = CI))
 }
 f_estimation_t_samples(keyboard[[1]], keyboard[[2]])
+
+
+
+
+#### Chapter 5: T-tests part 2 ####
+library(tidyverse)
+
+# mean
+# - measurement
+# - effect size 
+# - random ...
+# - ...
+
+# effect size
+# - diff - cohen's d
+# - correlation - r^2
+
+
+9; sqrt(1.2^2 + 2.7^2)
+9 / (sqrt(1.2^2 + 2.7^2) / sqrt(1000))
+
+# r.sqared 
+# t^2 / (t^2 + df)
+# "the differences in [fod samples], r.squared (proportion) is due to the cost-saving program"
+
+# Results Sections
+# - descriptive stats: mu, sigma. text/graphs/tables
+# - inferential stats: hypothesis test. kind of test, test stat, df, p-value, direction, alpha
+# - - APA style: t(df) = x.xx, p = x.x, direction
+# - - conf interval: lower/upper limit. on...{single-mean | diff-between-means | ...}
+
+# full one sample t test
+151 # mu
+25 # n
+50 # sample sd (w/ bessel's correction)
+50 / sqrt(25) # (sd / sqrt(n)) = std.err [of mean] (SEM). "expect sample means to differ from pop mean by this amt"
+126 # xbar
+126 - 151 # (xbar - mu) = mean difference
+
+t_test <- function(xbar, mu, s, n, alpha, tails){
+  t <- (xbar - mu) / (s / sqrt(n))
+  t.critical <- qt(p = (alpha / tails), df = n-1, lower.tail = F)
+  p.value <- pt(abs(t), df = (n-1), lower.tail = FALSE)
+  cohen.d <- mean(xbar - mu) / s # abs value matters
+  r.squared <- (t^2) / ((t^2) + (n-1))
+  sem <- s / sqrt(n) # standard error [of mean]
+  margin.of.error <- t.critical * sem
+  conf.int <- c(xbar - margin.of.error, xbar + margin.of.error)
+  
+  t.critical.2tails <- qt(p = (alpha / 2), df = n-1, lower.tail = F)
+  margin.of.error.mean.diff <- t.critical.2tails * sem
+  conf.int.of.mean.diff <- c((xbar - mu) - margin.of.error.mean.diff, (xbar - mu) + margin.of.error.mean.diff)
+  
+  return(list(t = t, t.critical = t.critical, p.value = p.value, cohen.d = cohen.d,
+              r.squared = r.squared, std.err.of.mean = sem, margin.of.error = margin.of.error,
+              conf.int = conf.int, conf.int.of.mean.diff = conf.int.of.mean.diff))
+}
+t_test(126, 151, 50, 25, .05, 2) 
+
+# use population standard deviation if given (sigma)
+# if not, use standard deviation of a sample (S) (w/ bessel's correction)
+# use one of these to calculate the standard error [of the mean]
+
+# standard deviation: how dispersed the data is (spread and variability)
+# standard error: how precise our estimate is of the mean (precision of means or comparing diff means)
+
+mean(c(8,7,6,9,10,5,7,11,8,7))
+mean(c(5,6,4,6,5,3,2,9,4,4))
+
+
+mean(c(5,6,4,6,5,3,2,9,4,4)- c(8,7,6,9,10,5,7,11,8,7))
+# post test minus pre test to get diff
+-3
+t_test(4.8,7.8,s = (-3/sqrt(10)), alpha = .05, tails = 1, n = 10)
+t_test(4.8,7.8,s = 1.33, alpha = .05, tails = 1, n = 10)
