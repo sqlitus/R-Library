@@ -313,6 +313,7 @@ t_test <- function(xbar, mu, s, n, alpha, tails){
   margin.of.error <- t.critical * sem
   conf.int <- c(xbar - margin.of.error, xbar + margin.of.error)
   
+  # (these calcs for confidence interval only)
   t.critical.2tails <- qt(p = (alpha / 2), df = n-1, lower.tail = F)
   margin.of.error.mean.diff <- t.critical.2tails * sem
   conf.int.of.mean.diff <- c((xbar - mu) - margin.of.error.mean.diff, (xbar - mu) + margin.of.error.mean.diff)
@@ -339,3 +340,102 @@ mean(c(5,6,4,6,5,3,2,9,4,4)- c(8,7,6,9,10,5,7,11,8,7))
 -3
 t_test(4.8,7.8,s = (-3/sqrt(10)), alpha = .05, tails = 1, n = 10)
 t_test(4.8,7.8,s = 1.33, alpha = .05, tails = 1, n = 10)
+
+
+
+
+#### T-tests part 3 ####
+
+# Independent samples & testing
+# average meal prices at gettysburg & wilma
+meals <- read.delim("clipboard")
+names(meals)[[1]] <- "gettysburg"
+names(meals)[2] <- "wilma"
+
+summary(meals)
+sd(meals$gettysburg)
+sd(meals$wilma, na.rm = TRUE)
+c(test = sd(meals$gettysburg), asdf = sd(meals$wilma, na.rm = TRUE))[1] %>% str()
+c(test = sd(meals$gettysburg), asdf = sd(meals$wilma, na.rm = TRUE))[[1]] %>% str()
+length(meals[[2]])
+length(na.omit(meals[[2]]))
+sd(meals[[1]])
+sd(meals[[1]])^2
+
+t_test.independent_samples <- function(x1, x2, alpha = .05, tails = 1){
+  # (for samples of same size. need to use pooled variance otherwise)
+  summaries <- list(x1 = summary(x1), x2 = summary(x2))
+  x1 <- x1[!is.na(x1)]
+  x2 <- x2[!is.na(x2)]
+  std.dev.sample <- list(sd.x1 = sd(x1), sd.x2 = sd(x2), sd.diff = sqrt(sd(x1)^2 + sd(x2)^2))
+  sem <- sqrt((sd(x1)^2 / length(x1)) + (sd(x2)^2 / length(x2)))
+  t <- (mean(x1) - mean(x2)) / sem
+  df <- length(x1) + length(x2) - 2
+  t.critical <- qt(p = (alpha / tails), df = df, lower.tail = F)
+  p.value <- pt(abs(t), df = df, lower.tail = FALSE)
+  
+    mean.abs.diff <- abs(mean(x1) - mean(x2))
+    t.critical.2.tails <- qt(p = (alpha / 2), df = df, lower.tail = F)
+    margin.of.error.mean.abs.diff <- t.critical.2.tails * sem
+  conf.int <- c(mean.abs.diff - margin.of.error.mean.abs.diff, mean.abs.diff + margin.of.error.mean.abs.diff)
+
+  r.squared <- (t^2) / (t^2 + df) # what proportion of the diff can be attributed to x1 vs x2?  
+  return(list(summaries = summaries, std.dev.sample = std.dev.sample, sem = sem, t = t, df = df, 
+              t.critical = t.critical, p.value = p.value, conf.int = conf.int, r.squared = r.squared))
+}
+t_test.independent_samples(meals$gettysburg, meals$wilma, alpha = .05, tails = 2)
+
+
+# acne test example: drug a and drug b
+drugs <- data_frame(drug.a = c(40, 36, 20, 32, 45, 28), drug.b = c(41, 39, 18, 23, 35, NA))
+View(drugs)
+t_test.independent_samples(drugs$drug.a, drugs$drug.b, alpha = .05, tails = 2)
+# conclusion: the drugs are not significantly different. neither can claim to be more effective than the other.
+
+
+# pairs of shoes example: men vs women
+shoes <- read.delim("clipboard")
+names(shoes)[[1]] <- "females"; names(shoes)[[2]] <- "males"
+t_test.independent_samples(shoes$females, shoes$males, alpha = .05, tails = 2)
+
+
+t_test.independent_samples.datapoints <- function(xbar1, xbar2, n1, n2, pooled.var, alpha, tails = 1, exp.diff=0){
+  # also accounts for pooled variance, and expected difference of mu
+  sem <- sqrt((pooled.var / n1) + (pooled.var / n2))
+  t <- (xbar1 - xbar2 - exp.diff) / sem
+  df <- n1 + n2 - 2
+  t.critical <- qt(p = (alpha / tails), df = df, lower.tail = F)
+  p.value <- pt(abs(t), df = df, lower.tail = FALSE)
+  
+    mean.abs.diff <- abs(xbar1 - xbar2)
+    t.critical.2.tails <- qt(p = (alpha / 2), df = df, lower.tail = F)
+    margin.of.error.mean.abs.diff <- t.critical.2.tails * sem
+  conf.int <- c(mean.abs.diff - margin.of.error.mean.abs.diff, mean.abs.diff + margin.of.error.mean.abs.diff)
+  
+  r.squared <- (t^2) / (t^2 + df) # what proportion of the diff can be attributed to xbar1 vs xbar2?  
+  return(list(sem = sem, t = t, df = df, t.critical = t.critical, p.value = p.value, 
+              conf.int = conf.int, r.squared = r.squared))
+}
+
+# t w/ pooled variance ...
+t_test.independent_samples.datapoints(3.8, 2.1, n1 = 18, n2 = 25, pooled.var = .13, alpha = .05)
+t_test.independent_samples.datapoints(12, 8, 52, 57, 5.1, alpha = .05, tails = 2, exp.diff = 3)
+
+(481 + 322) / (207 + 220 - 2)
+t_test.independent_samples.datapoints(35.8, 31.6, 207, 220, 
+  pooled.var = (481 + 322) / (207 + 220 - 2), alpha = .01, tails = 2)
+(9 - 8 ) / 1.29
+76/7 # pooled variance
+sqrt((76/7)/5 + (76/7)/4) # standard error
+(3 - 12) / 2.21 # t
+
+# example: two different incentives for adhd boys
+# independent var: incentive type
+# dependent var: number of good behaviors in 20 min class
+# H0: there will be no difference between treatments
+# 2 groups of 10 boys each. df = 18
+# 2 tailed t test with a = .05: 2.101
+# xbar1 = 10, xbar2 = 7, SE = .94
+(10 - 7) / .94 # t = 3.19
+(10 - 7 ) / 2.33 # cohen's d uses pooled variance. 1.29
+3.19^2 / (3.19^2 + 18) # r^2. "percent of variability due to different conditions"
