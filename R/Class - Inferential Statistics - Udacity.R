@@ -470,13 +470,27 @@ f.test <- function(...){
   summaries <- lapply(myvectors, summary)
   n <- length(Reduce(c, myvectors)) # grand sample size
   nk <- length(myvectors[[1]])    # sample size of one sample
+  k = length(myvectors) # number of [sample] groups
   xbar.each <- Reduce(c, lapply(myvectors, mean))
   xbar.g <- mean(Reduce(c, myvectors))
   
   ss.between <- nk * sum((xbar.each - xbar.g)^2)
-  ss.within <- 
+  ss.within.function <- function(mylist){
+    a <- 0
+    for (i in 1:k){
+      a <- a + sum((mylist[[i]] - mean(mylist[[i]])) ^ 2)
+    }
+    return(a)
+  }
+  ss.within <- ss.within.function(myvectors)
 
-  return(list(summaries = summaries, n = n, xbar.each = xbar.each, xbar.g = xbar.g, ss.between = ss.between))
+  ms.between <- ss.between / (k - 1) # degrees of freedom between)
+  ms.within <- ss.within / (n - k) # (degrees of freedom within)
+  
+  f <- ms.between / ms.within
+  return(list(summaries = summaries, n = n, xbar.each = xbar.each, xbar.g = xbar.g, ss.between = ss.between,
+              ss.within = ss.within, mean.square.between = ms.between, mean.square.within = ms.within,
+              anova.f.statistic = f))
 }
 f.test(clothes$snapzi, clothes$irisa, clothes$lolamoon)
 
@@ -484,6 +498,7 @@ f.test(clothes$snapzi, clothes$irisa, clothes$lolamoon)
 
 
 #### testing lists, applying functions, returning a vector ####
+library(tidyverse)
 test.list <- list(c(1,2,3), c(4,4,4), c(7,9))
 test.list
 lapply(X = test.list, mean)
@@ -493,4 +508,18 @@ Reduce(c, lapply(X = test.list, mean))
 Reduce(c, lapply(X = test.list, mean)) - 5
 (Reduce(c, lapply(X = test.list, mean)) - 5)^2
 
-c(1,2,3) + c(5,5,10)
+# list arithmatic
+length(test.list)
+test.list[[1]]
+test.list[[1]] - mean(test.list[[1]])
+(test.list[[1]] - mean(test.list[[1]])) ^ 2
+sum((test.list[[1]] - mean(test.list[[1]])) ^ 2)
+
+test.func.list.arithmetic <- function(mylist){
+  aa <- 0
+  for (i in 1:length(mylist)){
+    aa <- aa + sum((mylist[[i]] - mean(mylist[[i]])) ^ 2)
+  }
+  return(aa)
+}
+test.func.list.arithmetic(test.list)
