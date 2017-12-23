@@ -34,7 +34,7 @@ karma.scores$p_value_V <- 2 * pnorm(abs(karma.scores$z_score_V1))
 # how many karma points to be in top 5%? (work backwards)
 1.645 * 4.8 + 13
 
-#### Lesson 2: Estimation ####
+#### Chapter 2: Estimation ####
 library(tidyverse)
 engagement.ratio <- read.delim("clipboard")
 names(engagement.ratio)[1] <- "er"
@@ -268,7 +268,7 @@ f_estimation_t_samples(keyboard[[1]], keyboard[[2]])
 
 
 
-#### Chapter 5: T-tests part 2 ####
+#### Chapter 4: T-tests part 2 ####
 library(tidyverse)
 
 # mean
@@ -344,7 +344,7 @@ t_test(4.8,7.8,s = 1.33, alpha = .05, tails = 1, n = 10)
 
 
 
-#### T-tests part 3 ####
+#### Chapter 4: T-tests part 3 ####
 
 # Independent samples & testing
 # average meal prices at gettysburg & wilma
@@ -439,3 +439,58 @@ sqrt((76/7)/5 + (76/7)/4) # standard error
 (10 - 7) / .94 # t = 3.19
 (10 - 7 ) / 2.33 # cohen's d uses pooled variance. 1.29
 3.19^2 / (3.19^2 + 18) # r^2. "percent of variability due to different conditions"
+
+
+
+
+### Chapter 5: ANOVA part 1 ####
+# "find average squared deviation of each sample mean from the total mean"
+# grand mean (xg)
+# t = diff / error
+# between-group variability and within-group variability - sample means vs population means
+# (ANOVA) - compare means with a test
+# - one way ANOVA - 1 independent variable (called a factor)
+
+# f = between group var / within-group var
+# between group variability:  Nk * Sigma(xk - xg)^2 / (k-1) ; 
+# within group variability:  Sigma(xi - xk) / (N - k)   
+
+# clothes example
+clothes <- data.frame(snapzi = c(15,12,14,11), irisa = c(39,45,48,60), lolamoon = c(65,45,32,38))
+summary(clothes)
+# grand mean (xg)
+summary(c(clothes$snapzi, clothes$irisa, clothes$lolamoon))
+
+# sum of squares between (SSb) = n * Sigma(xbark - xbarg)^2
+length(c(clothes$snapzi, clothes$irisa, clothes$lolamoon))
+
+# ellipses function w/ variable length input
+f.test <- function(...){
+  myvectors <- list(...)
+  summaries <- lapply(myvectors, summary)
+  n <- length(Reduce(c, myvectors)) # grand sample size
+  nk <- length(myvectors[[1]])    # sample size of one sample
+  xbar.each <- Reduce(c, lapply(myvectors, mean))
+  xbar.g <- mean(Reduce(c, myvectors))
+  
+  ss.between <- nk * sum((xbar.each - xbar.g)^2)
+  ss.within <- 
+
+  return(list(summaries = summaries, n = n, xbar.each = xbar.each, xbar.g = xbar.g, ss.between = ss.between))
+}
+f.test(clothes$snapzi, clothes$irisa, clothes$lolamoon)
+
+
+
+
+#### testing lists, applying functions, returning a vector ####
+test.list <- list(c(1,2,3), c(4,4,4), c(7,9))
+test.list
+lapply(X = test.list, mean)
+Reduce(c, test.list)
+mean(Reduce(c, test.list))
+Reduce(c, lapply(X = test.list, mean))
+Reduce(c, lapply(X = test.list, mean)) - 5
+(Reduce(c, lapply(X = test.list, mean)) - 5)^2
+
+c(1,2,3) + c(5,5,10)
