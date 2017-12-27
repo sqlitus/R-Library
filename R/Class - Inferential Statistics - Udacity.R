@@ -465,7 +465,7 @@ summary(c(clothes$snapzi, clothes$irisa, clothes$lolamoon))
 length(c(clothes$snapzi, clothes$irisa, clothes$lolamoon))
 
 # ellipses function w/ variable length input
-f.test <- function(...){
+f.test <- function(..., alpha = .05){
   myvectors <- list(...)
   summaries <- lapply(myvectors, summary)
   n <- length(Reduce(c, myvectors)) # grand sample size
@@ -484,42 +484,30 @@ f.test <- function(...){
   }
   ss.within <- ss.within.function(myvectors)
 
-  ms.between <- ss.between / (k - 1) # degrees of freedom between)
-  ms.within <- ss.within / (n - k) # (degrees of freedom within)
+  ms.between <- ss.between / (k-1) # (div by degrees of freedom between)
+  ms.within <- ss.within / (n-k) # (div by degrees of freedom within)
   
-  f <- ms.between / ms.within
+  # not returned; for reference
+  ss.total = ss.between + ss.within # total sum of squares
+  df.total <- n - 1 # total degrees of freedom
+  
+  f.critical <- qf(1 - alpha, df1 = (k-1), df2 = (n-k)) # on the F table df1 = column, df2 = row
+  f <- ms.between / ms.within #anova f statistic (one-tailed)
+  
   return(list(summaries = summaries, n = n, xbar.each = xbar.each, xbar.g = xbar.g, ss.between = ss.between,
               ss.within = ss.within, mean.square.between = ms.between, mean.square.within = ms.within,
-              anova.f.statistic = f))
+              f.critical = f.critical, anova.f.statistic = f))
 }
 f.test(clothes$snapzi, clothes$irisa, clothes$lolamoon)
 
+childs <- data.frame(single = c(8,7,10,6,9), twins = c(4,6,7,4,9), triplets = c(4,4,7,2,3))
+f.test(childs$single, childs$twins, childs$triplets)
 
 
 
-#### testing lists, applying functions, returning a vector ####
-library(tidyverse)
-test.list <- list(c(1,2,3), c(4,4,4), c(7,9))
-test.list
-lapply(X = test.list, mean)
-Reduce(c, test.list)
-mean(Reduce(c, test.list))
-Reduce(c, lapply(X = test.list, mean))
-Reduce(c, lapply(X = test.list, mean)) - 5
-(Reduce(c, lapply(X = test.list, mean)) - 5)^2
 
-# list arithmatic
-length(test.list)
-test.list[[1]]
-test.list[[1]] - mean(test.list[[1]])
-(test.list[[1]] - mean(test.list[[1]])) ^ 2
-sum((test.list[[1]] - mean(test.list[[1]])) ^ 2)
+#### Lesson 14: ANOVA continued ####
 
-test.func.list.arithmetic <- function(mylist){
-  aa <- 0
-  for (i in 1:length(mylist)){
-    aa <- aa + sum((mylist[[i]] - mean(mylist[[i]])) ^ 2)
-  }
-  return(aa)
-}
-test.func.list.arithmetic(test.list)
+# cows & food example
+cow.food <- data.frame(food.a = c(2,4,3), food.b = c(6,5,7), food.c = c(8,9,10))
+f.test(cow.food$food.a, cow.food$food.b, cow.food$food.c)

@@ -31,6 +31,10 @@ df$Time.To.Response <- difftime(df$FirstAssigned, df$Created, units = "mins")
 df$Time.To.Restore.Service <- difftime(df$Resolved, df$Created, units = "mins")
 df$Assigned.To.Resolve <- difftime(df$Resolved, df$FirstAssigned, units = "mins")
 
+
+
+
+
 #### Webscrape Project ####
 # regularly scrape websites to df
 # tm on df

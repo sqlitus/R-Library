@@ -13,6 +13,32 @@ help.search(pattern = "optimisation|optimization", fields = c("title","concept")
 
 
 
+#### 12/21/2017 - testing lists, applying functions, returning a vector ####
+library(tidyverse)
+test.list <- list(c(1,2,3), c(4,4,4), c(7,9))
+test.list
+lapply(X = test.list, mean)
+Reduce(c, test.list)
+mean(Reduce(c, test.list))
+Reduce(c, lapply(X = test.list, mean))
+Reduce(c, lapply(X = test.list, mean)) - 5
+(Reduce(c, lapply(X = test.list, mean)) - 5)^2
+
+# list arithmatic
+length(test.list)
+test.list[[1]]
+test.list[[1]] - mean(test.list[[1]])
+(test.list[[1]] - mean(test.list[[1]])) ^ 2
+sum((test.list[[1]] - mean(test.list[[1]])) ^ 2)
+
+test.func.list.arithmetic <- function(mylist){
+  aa <- 0
+  for (i in 1:length(mylist)){
+    aa <- aa + sum((mylist[[i]] - mean(mylist[[i]])) ^ 2)
+  }
+  return(aa)
+}
+test.func.list.arithmetic(test.list)
 
 #### 12/13/2017 - functions & returning values ####
 
