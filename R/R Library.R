@@ -200,6 +200,13 @@ ggplot(kk, aes(Goal, Funded, size = Backers, color = `Reward Tiers`)) + geom_poi
   geom_hline(yintercept = median(kk$Funded), color = "firebrick") +
   geom_vline(xintercept = median(kk$Goal), color = "green") +
   annotate("text", 0, median(kk$Funded), vjust = -1, label = median(kk$Funded))
+
+# vline hline with legend. doesn't work well with other color data points
+ggplot(kk, aes(Goal, Funded, size = Backers, color = `Reward Tiers`)) + geom_point() + 
+  geom_hline(aes(yintercept = median(kk$Funded), color = "median fund")) +
+  geom_vline(aes(xintercept = median(kk$Goal), color = "median_goal")) + #adds line to color legend
+  annotate("text", 0, median(kk$Funded), vjust = -1, label = median(kk$Funded))
+  # scale_color_manual(name = "statistics", values = c(test1 = "red", median_goal = "blue")) 
   # geom_text(aes(0,median(kk$Funded), label = round(median(kk$Funded))), vjust = -1, size = 4)
   # scale_y_continuous(breaks = c(seq(round(min(kk$Funded)), round(max(kk$Funded)), length.out = 5), round(mean(kk$Funded))))
   # scale_y_continuous(breaks = c(seq(0, 10000, by = 1000), round(median(kk$Funded))))

@@ -469,7 +469,7 @@ f.test <- function(..., alpha = .05){
   myvectors <- list(...)
   summaries <- lapply(myvectors, summary)
   n <- length(Reduce(c, myvectors)) # grand sample size
-  nk <- length(myvectors[[1]])    # sample size of one sample
+  nk <- length(myvectors[[1]])    # sample size of one sample. !! change if diff sample sizes
   k = length(myvectors) # number of [sample] groups
   xbar.each <- Reduce(c, lapply(myvectors, mean))
   xbar.g <- mean(Reduce(c, myvectors))
@@ -487,16 +487,19 @@ f.test <- function(..., alpha = .05){
   ms.between <- ss.between / (k-1) # (div by degrees of freedom between)
   ms.within <- ss.within / (n-k) # (div by degrees of freedom within)
   
-  # not returned; for reference
+  # reference values (not returned)
   ss.total = ss.between + ss.within # total sum of squares
   df.total <- n - 1 # total degrees of freedom
   
   f.critical <- qf(1 - alpha, df1 = (k-1), df2 = (n-k)) # on the F table df1 = column, df2 = row
   f <- ms.between / ms.within #anova f statistic (one-tailed)
   
+  q <- qtukey(p = 1 - alpha, nmeans = k, df = n - k) 
+  tukey.hsd <- q * sqrt(ms.within / nk) # honestly significant difference
+  
   return(list(summaries = summaries, n = n, xbar.each = xbar.each, xbar.g = xbar.g, ss.between = ss.between,
               ss.within = ss.within, mean.square.between = ms.between, mean.square.within = ms.within,
-              f.critical = f.critical, anova.f.statistic = f))
+              f.critical = f.critical, anova.f.statistic = f, tukey.hsd = tukey.hsd))
 }
 f.test(clothes$snapzi, clothes$irisa, clothes$lolamoon)
 
@@ -511,3 +514,16 @@ f.test(childs$single, childs$twins, childs$triplets)
 # cows & food example
 cow.food <- data.frame(food.a = c(2,4,3), food.b = c(6,5,7), food.c = c(8,9,10))
 f.test(cow.food$food.a, cow.food$food.b, cow.food$food.c)
+sum((cow.food - 6)^2) # sum of squares...
+
+# after anova, multiple comparison test - test the means with each other
+# Tukey's Honestly Significant Difference (HSD)
+# studentized range statistic (q*)
+# HSD = q * sqrt(ms.within/nk)
+4.34 * sqrt(1 / 3)
+qtukey(.95, nmeans = 3, 6)
+# if any two sample MEANS have a difference greater than hsd, then the difference is considered honestly significant
+# requires same sample sizes
+
+# cohen's d for multiple comparisons
+# (xbar1 - xbar2) / sqrt(ms.within)
