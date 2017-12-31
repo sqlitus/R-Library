@@ -497,9 +497,14 @@ f.test <- function(..., alpha = .05){
   q <- qtukey(p = 1 - alpha, nmeans = k, df = n - k) 
   tukey.hsd <- q * sqrt(ms.within / nk) # honestly significant difference
   
+  # effect size measures
+  cohens.d <- (xbar.each[1] - xbar.each[2]) / sqrt(ms.within) # need to do for each sample
+  eta.squared <- ss.between / ss.total # anything greater than .14 is big
+  
   return(list(summaries = summaries, n = n, xbar.each = xbar.each, xbar.g = xbar.g, ss.between = ss.between,
               ss.within = ss.within, mean.square.between = ms.between, mean.square.within = ms.within,
-              f.critical = f.critical, anova.f.statistic = f, tukey.hsd = tukey.hsd))
+              f.critical = f.critical, anova.f.statistic = f, tukey.hsd = tukey.hsd,
+              cohens.d = cohens.d, eta.squared = eta.squared))
 }
 f.test(clothes$snapzi, clothes$irisa, clothes$lolamoon)
 
@@ -525,5 +530,12 @@ qtukey(.95, nmeans = 3, 6)
 # if any two sample MEANS have a difference greater than hsd, then the difference is considered honestly significant
 # requires same sample sizes
 
-# cohen's d for multiple comparisons
+# effect size measure: cohen's d for multiple comparisons
 # (xbar1 - xbar2) / sqrt(ms.within)
+# sqrt(ms.within) = pooled variance
+(3 - 6) / sqrt(1)
+(3 - 9) / sqrt(1)
+
+# effect size measure: eta squared n2 = ss.between / ss.total
+# ...Proportion of total variation due to between group variation. (explained variation)
+# eta.squared = .9 means that 90% of the differences in [dependent var] is due to [independent var]
